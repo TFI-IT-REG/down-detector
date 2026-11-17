@@ -20,6 +20,7 @@ It ships in **dry-run mode**. It checks everything and shows what it would send,
 | Task | Where |
 |---|---|
 | Add a service | Edit `config/services.json`, commit |
+| Pause/resume Teams alerts | Variables > `TEAMS_ENABLED` = `true` to send, anything else (or unset) to pause. Push alerts are unaffected. |
 | Turn alerts on/off | Settings > Secrets and variables > Actions > Variables > `LIVE` = `true` / `false` |
 | Send a test alert | Actions > Down Detector > Run workflow > tick "Send a TEST message" |
 | Check a new feed's format | Actions > Down Detector > Run workflow > tick "Print raw responses" |
@@ -47,6 +48,7 @@ Levels: **Down** (high-priority push), **Degraded**, **Can't check** (status sou
 4. Name it "Down Detector", confirm the chat, and click **Add workflow**.
 5. Copy the URL it gives you.
 6. In GitHub: **Settings > Secrets and variables > Actions > Secrets > New repository secret**. Name: `TEAMS_WEBHOOK_URL`. Value: the URL.
+7. Add variable `TEAMS_ENABLED` = `true`. Teams stays paused without it.
 
 The workflow posts as whoever created it in Teams, so set it up from the account you want the alerts to come from.
 
