@@ -1,0 +1,3 @@
+{"page":{"id":"x","name":"GitHub","url":"https://www.githubstatus.com"},"status":{"indicator":"none","description":"All Systems Operational"},
+"components":[{"id":"c1","name":"Git Operations","status":"operational","group":false},{"id":"c2","name":"Actions","status":"operational","group":false},{"id":"g1","name":"Group","status":"operational","group":true}],
+"incidents":[],"scheduled_maintenances":[]}

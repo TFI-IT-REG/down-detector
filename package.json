@@ -1,0 +1,14 @@
+{
+  "name": "down-detector",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Watches the services we depend on and alerts Teams and phone push at the first sign of trouble.",
+  "scripts": {
+    "check": "node src/monitor.mjs",
+    "probe": "node src/monitor.mjs --probe",
+    "test-alert": "node src/monitor.mjs --test-alert",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

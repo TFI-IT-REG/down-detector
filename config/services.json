@@ -1,0 +1,92 @@
+{
+  "defaults": {
+    "timeoutMs": 10000,
+    "failThreshold": 1,
+    "unknownThreshold": 3,
+    "retryDelayMs": 15000,
+    "slowMs": 8000,
+    "notifyMaintenance": false
+  },
+  "services": [
+    {
+      "id": "netsuite-login",
+      "name": "NetSuite login",
+      "group": "ERP / WMS",
+      "type": "http",
+      "url": "https://system.netsuite.com/pages/customerlogin.jsp",
+      "pageUrl": "https://status.netsuite.com/"
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "group": "Dev",
+      "type": "statuspage",
+      "url": "https://www.githubstatus.com"
+    },
+    {
+      "id": "github-api",
+      "name": "GitHub API (direct)",
+      "group": "Dev",
+      "type": "http",
+      "url": "https://api.github.com/zen",
+      "pageUrl": "https://www.githubstatus.com"
+    },
+    {
+      "id": "m365-health",
+      "name": "Microsoft 365 (tenant health)",
+      "group": "Microsoft",
+      "type": "m365graph",
+      "pageUrl": "https://status.cloud.microsoft/"
+    },
+    {
+      "id": "azure",
+      "name": "Azure",
+      "group": "Microsoft",
+      "type": "rss",
+      "url": "https://azure.status.microsoft/en-us/status/feed/",
+      "pageUrl": "https://azure.status.microsoft/en-us/status",
+      "maxAgeHours": 24
+    },
+    {
+      "id": "m365-login",
+      "name": "Microsoft sign-in (Entra ID)",
+      "group": "Microsoft",
+      "type": "http",
+      "url": "https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration",
+      "expectText": "issuer",
+      "pageUrl": "https://status.cloud.microsoft/"
+    },
+    {
+      "id": "outlook",
+      "name": "Outlook web",
+      "group": "Microsoft",
+      "type": "http",
+      "url": "https://outlook.office.com/",
+      "pageUrl": "https://status.cloud.microsoft/"
+    },
+    {
+      "id": "google-workspace",
+      "name": "Google Workspace",
+      "group": "Google",
+      "type": "google",
+      "url": "https://www.google.com/appsstatus/dashboard/incidents.json",
+      "pageUrl": "https://www.google.com/appsstatus/dashboard/"
+    },
+    {
+      "id": "google-login",
+      "name": "Google sign-in",
+      "group": "Google",
+      "type": "http",
+      "url": "https://accounts.google.com/.well-known/openid-configuration",
+      "expectText": "issuer",
+      "pageUrl": "https://www.google.com/appsstatus/dashboard/"
+    },
+    {
+      "id": "cloudflare",
+      "name": "Cloudflare",
+      "group": "Infrastructure",
+      "type": "statuspage",
+      "url": "https://www.cloudflarestatus.com"
+    }
+  ]
+}

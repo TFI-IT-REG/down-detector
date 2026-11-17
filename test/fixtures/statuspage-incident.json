@@ -1,0 +1,4 @@
+{"page":{"id":"x","name":"GitHub"},"status":{"indicator":"major","description":"Partial System Outage"},
+"components":[{"id":"c1","name":"Git Operations","status":"operational","group":false},{"id":"c2","name":"Actions","status":"major_outage","group":false},{"id":"c3","name":"Pages","status":"degraded_performance","group":false}],
+"incidents":[{"id":"inc1","name":"Incident with Actions","status":"investigating","impact":"major","shortlink":"https://stspg.io/abc","components":[{"id":"c2","name":"Actions"}]},
+{"id":"inc0","name":"Old thing","status":"resolved","impact":"minor","shortlink":"https://stspg.io/old"}],"scheduled_maintenances":[]}

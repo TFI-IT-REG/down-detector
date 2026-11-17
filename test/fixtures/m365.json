@@ -1,0 +1,1 @@
+{"value":[{"service":"Exchange Online","status":"serviceDegradation","id":"Exchange"},{"service":"Microsoft Teams","status":"serviceOperational","id":"Teams"},{"service":"SharePoint Online","status":"serviceInterruption","id":"SharePoint"},{"service":"OneDrive for Business","status":"serviceRestored","id":"OneDrive"}]}
