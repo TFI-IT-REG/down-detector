@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Down Detector status page v1.0.0 -->
+<!-- Down Detector status page v1.1.0 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -7,39 +7,46 @@
 <title>Service Status</title>
 <style>
 :root {
-  --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #5d6673; --border: #dde1e6;
+  --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #5d6673; --border: #dde1e6; --grid: #eceff2;
   --ok: #1f8a4c; --ok-bg: #e6f4ec; --warn: #a15c00; --warn-bg: #fdf1df;
   --down: #c4302b; --down-bg: #fbe7e6; --info: #2f5fb3; --info-bg: #e7eefa;
   --gray: #6b7280; --gray-bg: #eef0f3; --tip-bg: #1b1f24; --tip-text: #fff;
+  --bar-ok: #2fa463; --bar-warn: #e09422; --bar-down: #d93a33; --bar-info: #4a7bd0; --bar-none: #e3e6ea;
+  --line: #2f5fb3;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #9aa3ad; --border: #2c323a;
+    --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #9aa3ad; --border: #2c323a; --grid: #262b32;
     --ok: #4cc27f; --ok-bg: #16301f; --warn: #e5a54a; --warn-bg: #33270f;
     --down: #ff6b63; --down-bg: #3a1716; --info: #7ea6ef; --info-bg: #172440;
     --gray: #9aa3ad; --gray-bg: #23282f; --tip-bg: #e6e8eb; --tip-text: #111418;
+    --bar-ok: #3bb873; --bar-warn: #e5a54a; --bar-down: #f0605a; --bar-info: #6f98e6; --bar-none: #2a3038;
+    --line: #7ea6ef;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #9aa3ad; --border: #2c323a;
+  --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #9aa3ad; --border: #2c323a; --grid: #262b32;
   --ok: #4cc27f; --ok-bg: #16301f; --warn: #e5a54a; --warn-bg: #33270f;
   --down: #ff6b63; --down-bg: #3a1716; --info: #7ea6ef; --info-bg: #172440;
   --gray: #9aa3ad; --gray-bg: #23282f; --tip-bg: #e6e8eb; --tip-text: #111418;
+  --bar-ok: #3bb873; --bar-warn: #e5a54a; --bar-down: #f0605a; --bar-info: #6f98e6; --bar-none: #2a3038;
+  --line: #7ea6ef;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-main { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
+main { max-width: 1000px; margin: 0 auto; padding: 20px 16px 48px; }
 header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 h1 { font-size: 20px; margin: 0; }
-h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 24px 0 8px; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 24px 0 8px; }
 .toolbar { display: flex; gap: 6px; flex-wrap: wrap; }
 button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; position: relative; }
 button[aria-pressed="true"] { background: var(--info-bg); border-color: var(--info); color: var(--info); }
 [data-tip]:hover::after, [data-tip]:focus-visible::after {
-  content: attr(data-tip); position: absolute; right: 0; top: calc(100% + 6px); z-index: 10;
-  background: var(--tip-bg); color: var(--tip-text); font-size: 12px; padding: 5px 8px; border-radius: 4px;
-  white-space: normal; width: max-content; max-width: 240px; pointer-events: none;
+  content: attr(data-tip); position: absolute; right: 0; top: calc(100% + 6px); z-index: 20;
+  background: var(--tip-bg); color: var(--tip-text); font-size: 12px; font-weight: 400; padding: 5px 8px; border-radius: 4px;
+  width: max-content; max-width: 240px; pointer-events: none; text-transform: none; letter-spacing: 0;
 }
+#tt { position: fixed; z-index: 30; pointer-events: none; background: var(--tip-bg); color: var(--tip-text); font-size: 12px; padding: 5px 8px; border-radius: 4px; max-width: 260px; display: none; white-space: pre-line; }
 .banner { padding: 14px 16px; border-radius: 8px; font-weight: 600; border: 1px solid var(--border); }
 .banner small { display: block; font-weight: 400; color: var(--muted); margin-top: 2px; }
 .lvl-ok { background: var(--ok-bg); color: var(--ok); }
@@ -50,13 +57,31 @@ button[aria-pressed="true"] { background: var(--info-bg); border-color: var(--in
 .stale { margin-top: 8px; padding: 10px 14px; border-radius: 8px; background: var(--warn-bg); color: var(--warn); }
 .grid { display: grid; gap: 8px; }
 .svc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
-.svc .name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.svc > * { min-width: 0; }
+.svc .name { font-weight: 600; overflow-wrap: anywhere; }
 .svc .name a { color: inherit; }
 .pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; align-self: start; white-space: nowrap; position: relative; }
+.pill::before { content: attr(data-icon); margin-right: 4px; }
 .svc .detail { grid-column: 1 / -1; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
 .svc ul { grid-column: 1 / -1; margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
 .svc ul a { color: var(--info); }
 .meta { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.viz { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 6px; }
+.bars { display: flex; gap: 2px; height: 22px; align-items: stretch; }
+.bars span { flex: 1; border-radius: 2px; background: var(--bar-none); min-width: 2px; }
+.bars span:hover { outline: 2px solid var(--text); outline-offset: 1px; }
+.b-o, .b-m.only-maint { background: var(--bar-ok) !important; }
+.b-d { background: var(--bar-warn) !important; }
+.b-u { background: repeating-linear-gradient(135deg, var(--bar-none) 0 3px, var(--bar-warn) 3px 5px) !important; }
+.b-x { background: var(--bar-down) !important; }
+.b-m { background: var(--bar-info) !important; }
+.b-s { background: var(--bar-none) !important; }
+.axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+.axis b { font-weight: 600; color: var(--text); }
+.spark { position: relative; }
+.spark svg { display: block; width: 100%; height: 44px; overflow: visible; }
+.spark .stats { font-size: 11px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+.spark .stats b { color: var(--text); font-weight: 600; }
 .hist { background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
 .hist div { padding: 8px 12px; border-top: 1px solid var(--border); font-size: 13px; overflow-wrap: anywhere; }
 .hist div:first-child { border-top: 0; }
@@ -64,8 +89,27 @@ button[aria-pressed="true"] { background: var(--info-bg); border-color: var(--in
 .help { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 4px 16px; margin-bottom: 16px; }
 .help h3 { font-size: 15px; margin: 12px 0 4px; }
 .help p, .help li { font-size: 14px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); margin: 10px 0 0; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 .empty { color: var(--muted); font-size: 13px; padding: 8px 12px; }
 footer { margin-top: 32px; font-size: 12px; color: var(--muted); }
+
+/* Tile view */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.tile { border-radius: 10px; padding: 14px; border: 1px solid var(--border); position: relative; min-height: 104px; display: flex; flex-direction: column; justify-content: space-between; }
+.tile .t-name { font-weight: 700; font-size: 16px; color: var(--text); overflow-wrap: anywhere; }
+.tile .t-lvl { font-size: 20px; font-weight: 700; margin-top: 6px; }
+.tile .t-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.tile.lvl-ok { border-color: transparent; }
+body.tv main { max-width: none; padding: 20px 24px; }
+body.tv .tiles { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+body.tv .tile { min-height: 150px; padding: 20px; }
+body.tv .tile .t-name { font-size: 22px; }
+body.tv .tile .t-lvl { font-size: 30px; }
+body.tv .tile .t-sub { font-size: 15px; }
+body.tv .banner { font-size: 22px; }
+body.tv #hist-section, body.tv #help { display: none; }
+@media (max-width: 520px) { .tiles { grid-template-columns: 1fr 1fr; } .tile { min-height: 92px; padding: 10px; } .tile .t-lvl { font-size: 16px; } }
 </style>
 </head>
 <body>
@@ -73,6 +117,7 @@ footer { margin-top: 32px; font-size: 12px; color: var(--muted); }
   <header>
     <h1>Service Status</h1>
     <div class="toolbar">
+      <button id="btn-view" aria-pressed="false" data-tip="Switch between the detailed list and big colored tiles for a wall screen" aria-label="Tile view">Tile view</button>
       <button id="btn-problems" aria-pressed="false" data-tip="Hide services that are working normally" aria-label="Show problems only">Problems only</button>
       <button id="btn-auto" aria-pressed="true" data-tip="Reload the data every 60 seconds while this tab is open" aria-label="Auto refresh">Auto refresh</button>
       <button id="btn-refresh" data-tip="Reload the latest results now" aria-label="Refresh now">Refresh</button>
@@ -85,12 +130,22 @@ footer { margin-top: 32px; font-size: 12px; color: var(--muted); }
     <h3>How it works</h3>
     <p>A scheduled GitHub Actions job checks every service about every 5 minutes. GitHub can delay scheduled runs, so gaps of 10 to 15 minutes are normal.</p>
     <ul>
-      <li><b>Vendor status pages</b> (GitHub, Cloudflare, Google, Azure, Microsoft 365) are read from their official feeds. These are accurate but vendors often post late.</li>
+      <li><b>Vendor status</b> checks read the vendor's official status feed. Accurate, but vendors often post late.</li>
       <li><b>Direct probes</b> load a real login page or API from GitHub's servers. These usually catch problems first. A probe only counts as failed if it fails twice, 15 seconds apart.</li>
+      <li><b>History bar</b>: each block is 30 minutes, oldest on the left. Its color is the worst result in that window. Gray means no check ran. Hover a block for details. The percentage is the share of checks that were working.</li>
+      <li><b>Response time</b> (direct probes only): how long the page took to load over the last 24 hours. The scale starts at 1 second, so a flat line near the bottom is healthy. The dashed line is the slow limit when it's in range. Gaps are failed checks. Hover for exact times.</li>
+      <li><b>Tile view</b> is for a wall screen. Add <code>?view=tv</code> to the address for a full-width version with bigger text.</li>
       <li><b>Alerts</b> go to Teams and phone push only when something changes: a new problem, a worse problem, a new incident, or recovery.</li>
-      <li><b>Can't check</b> means the status source itself could not be read 3 runs in a row. That's a monitor problem, not necessarily a vendor problem.</li>
-      <li><b>Not configured</b> means the check needs credentials that haven't been added yet.</li>
+      <li><b>Can't check</b> means the status source itself could not be read 3 runs in a row. <b>Not configured</b> means the check needs credentials first.</li>
     </ul>
+    <div class="legend">
+      <span><i style="background:var(--bar-ok)"></i>Operational</span>
+      <span><i style="background:var(--bar-warn)"></i>Degraded</span>
+      <span><i style="background:repeating-linear-gradient(135deg, var(--bar-none) 0 3px, var(--bar-warn) 3px 5px)"></i>Monitor couldn't check</span>
+      <span><i style="background:var(--bar-down)"></i>Down</span>
+      <span><i style="background:var(--bar-info)"></i>Maintenance</span>
+      <span><i style="background:var(--bar-none)"></i>No data</span>
+    </div>
     <p>A direct probe failing from GitHub's servers doesn't always mean it's down for us. Check the vendor link before escalating.</p>
   </section>
 
@@ -98,23 +153,28 @@ footer { margin-top: 32px; font-size: 12px; color: var(--muted); }
   <div id="stale" class="stale" hidden></div>
   <div id="groups"></div>
 
-  <h2>Recent alerts</h2>
-  <div id="history" class="hist"></div>
+  <section id="hist-section">
+    <h2>Recent alerts</h2>
+    <div id="history" class="hist"></div>
+  </section>
 
   <footer id="footer"></footer>
 </main>
+<div id="tt" role="tooltip"></div>
 <script>
 const LABEL = { ok: 'Operational', degraded: 'Degraded', down: 'Down', maintenance: 'Maintenance', unknown: "Can't check", skipped: 'Not configured' };
+const ICON = { ok: '✓', degraded: '!', down: '✕', maintenance: '⚒', unknown: '?', skipped: '–' };
 const RANK = { ok: 0, skipped: 0, maintenance: 1, unknown: 2, degraded: 3, down: 4 };
+const CODE_LEVEL = { o: 'ok', m: 'maintenance', u: 'unknown', d: 'degraded', x: 'down', s: 'skipped' };
+const CODE_RANK = { s: -1, o: 0, m: 1, u: 2, d: 3, x: 4 };
 const TIP = {
-  ok: 'Working normally',
-  degraded: 'Partially working, slow, or the vendor reports an issue',
-  down: 'Not working or the vendor reports a major outage',
-  maintenance: 'Vendor maintenance in progress',
-  unknown: 'The status source could not be read',
-  skipped: 'Needs credentials before it can run'
+  ok: 'Working normally', degraded: 'Partially working, slow, or the vendor reports an issue', down: 'Not working or the vendor reports a major outage',
+  maintenance: 'Vendor maintenance in progress', unknown: 'The status source could not be read', skipped: 'Needs credentials before it can run'
 };
-let data = null, problemsOnly = false, timer = null;
+const BUCKETS = 48;
+let data = null, problemsOnly = false, tiles = false, timer = null;
+const params = new URLSearchParams(location.search);
+const tv = params.get('view') === 'tv';
 
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -128,7 +188,94 @@ function ago(iso) {
   return Math.round(s / 86400) + ' d ago';
 }
 function fmt(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString(); }
+function hm(sec) { return new Date(sec * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
 
+// ---------- data shaping ----------
+function windowOf() {
+  const end = Math.floor(Date.parse(data.generatedAt) / 1000);
+  const hours = data.historyHours || 24;
+  return { end, start: end - hours * 3600, hours };
+}
+function uptime(samples) {
+  let good = 0, counted = 0;
+  for (const [, c] of samples || []) {
+    if (c === 'u' || c === 's') continue;
+    counted++;
+    if (c === 'o' || c === 'm') good++;
+  }
+  return counted ? good / counted : null;
+}
+function pctText(u) {
+  if (u === null) return 'no data';
+  const p = u * 100;
+  return (p === 100 ? '100' : p >= 99.95 ? '99.9' : p.toFixed(1)) + '% up';
+}
+function buckets(samples) {
+  const { start, end } = windowOf();
+  const span = (end - start) / BUCKETS;
+  const out = Array.from({ length: BUCKETS }, (_, i) => ({ from: start + i * span, to: start + (i + 1) * span, worst: null, n: 0, bad: 0 }));
+  for (const [t, c] of samples || []) {
+    if (t < start || c === 's') continue;
+    const b = out[Math.min(BUCKETS - 1, Math.floor((t - start) / span))];
+    b.n++;
+    if (c !== 'o' && c !== 'm') b.bad++;
+    if (b.worst === null || CODE_RANK[c] > CODE_RANK[b.worst]) b.worst = c;
+  }
+  return out;
+}
+function quantile(sorted, q) {
+  if (!sorted.length) return null;
+  const i = (sorted.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i);
+  return Math.round(sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo));
+}
+
+// ---------- charts ----------
+function barsHtml(s) {
+  const bs = buckets(s.samples);
+  const spans = bs.map(b => {
+    const lvl = b.worst ? CODE_LEVEL[b.worst] : null;
+    const tip = hm(b.from) + ' – ' + hm(b.to) + '\n' + (b.n ? LABEL[lvl] + ' (' + b.n + ' check' + (b.n > 1 ? 's' : '') + (b.bad ? ', ' + b.bad + ' with issues' : '') + ')' : 'No data');
+    return '<span class="' + (b.worst ? 'b-' + b.worst : '') + '" data-tt="' + esc(tip) + '"></span>';
+  }).join('');
+  const { hours } = windowOf();
+  return '<div class="bars" role="img" aria-label="' + esc(s.name + ' history, last ' + hours + ' hours, ' + pctText(uptime(s.samples))) + '">' + spans + '</div>' +
+    '<div class="axis"><span>' + hours + 'h ago</span><b>' + esc(pctText(uptime(s.samples))) + '</b><span>now</span></div>';
+}
+
+function sparkHtml(s) {
+  const pts = (s.samples || []).filter(x => x[2] !== null && x[2] !== undefined && (x[1] === 'o' || x[1] === 'd'));
+  if (pts.length < 2) return '';
+  const { start, end } = windowOf();
+  const W = 600, H = 44, PAD = 3;
+  const sorted = pts.map(p => p[2]).sort((a, b) => a - b);
+  const p95 = quantile(sorted, 0.95);
+  const avg = Math.round(sorted.reduce((a, b) => a + b, 0) / sorted.length);
+  // Floor of 1s so normal jitter on a healthy service draws as a calm, near-flat line.
+  const yMax = Math.max(sorted[sorted.length - 1] * 1.1, 1000);
+  const x = t => ((t - start) / (end - start)) * W;
+  const y = ms => H - PAD - (Math.min(ms, yMax) / yMax) * (H - PAD * 2);
+  // Break the line where a check failed (gap of a down/unknown sample between points).
+  const all = (s.samples || []).filter(p => p[0] >= start);
+  let d = '', pen = false;
+  for (const p of all) {
+    const ok = p[2] !== null && p[2] !== undefined && (p[1] === 'o' || p[1] === 'd');
+    if (!ok) { pen = false; continue; }
+    d += (pen ? 'L' : 'M') + x(p[0]).toFixed(1) + ' ' + y(p[2]).toFixed(1);
+    pen = true;
+  }
+  const slow = s.slowMs && s.slowMs <= yMax ? '<line x1="0" x2="' + W + '" y1="' + y(s.slowMs).toFixed(1) + '" y2="' + y(s.slowMs).toFixed(1) + '" stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>' : '';
+  const last = pts[pts.length - 1];
+  return '<div class="spark" data-id="' + esc(s.id) + '">' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + esc(s.name + ' response time, average ' + avg + ' ms') + '">' +
+    '<line x1="0" x2="' + W + '" y1="' + (H - PAD) + '" y2="' + (H - PAD) + '" stroke="var(--grid)" stroke-width="1" vector-effect="non-scaling-stroke"/>' + slow +
+    '<path d="' + d + '" fill="none" stroke="var(--line)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' +
+    '<line class="xh" x1="0" x2="0" y1="0" y2="' + H + '" stroke="var(--muted)" stroke-width="1" vector-effect="non-scaling-stroke" visibility="hidden"/>' +
+    '</svg>' +
+    '<div class="stats"><span>Response time</span><span>now <b>' + last[2] + ' ms</b></span><span>avg <b>' + avg + ' ms</b></span><span>p95 <b>' + p95 + ' ms</b></span>' +
+    (s.slowMs ? '<span>slow limit ' + s.slowMs + ' ms</span>' : '') + '</div></div>';
+}
+
+// ---------- rendering ----------
 async function load() {
   try {
     const r = await fetch('status.json?t=' + Date.now(), { cache: 'no-store' });
@@ -136,8 +283,9 @@ async function load() {
     data = await r.json();
     render();
   } catch (e) {
-    document.getElementById('banner').className = 'banner lvl-unknown';
-    document.getElementById('banner').textContent = 'Could not load status data (' + e.message + ')';
+    const b = document.getElementById('banner');
+    b.className = 'banner lvl-unknown';
+    b.textContent = 'Could not load status data (' + e.message + ')';
   }
 }
 
@@ -152,18 +300,19 @@ function render() {
 
   const ageMin = (Date.now() - Date.parse(data.generatedAt)) / 60000;
   const stale = document.getElementById('stale');
-  const limit = Math.max(30, (data.intervalMinutes || 5) * 6);
-  stale.hidden = ageMin < limit;
+  stale.hidden = ageMin < Math.max(30, (data.intervalMinutes || 5) * 6);
   stale.textContent = 'This data is ' + Math.round(ageMin) + ' minutes old. The monitor may have stopped running. Check the GitHub Actions tab.';
 
-  const groups = {};
-  for (const s of svcs) {
-    if (problemsOnly && (RANK[s.level] ?? 0) < 1) continue;
-    (groups[s.group] = groups[s.group] || []).push(s);
+  const visible = svcs.filter(s => !problemsOnly || (RANK[s.level] ?? 0) >= 1);
+  const sorter = (a, b) => (RANK[b.level] ?? 0) - (RANK[a.level] ?? 0) || a.name.localeCompare(b.name);
+  let html;
+  if (tiles) {
+    html = visible.length ? '<div class="tiles" style="margin-top:16px">' + visible.slice().sort(sorter).map(tile).join('') + '</div>' : '';
+  } else {
+    const groups = {};
+    for (const s of visible) (groups[s.group] = groups[s.group] || []).push(s);
+    html = Object.keys(groups).map(g => '<h2>' + esc(g) + '</h2><div class="grid">' + groups[g].sort(sorter).map(card).join('') + '</div>').join('');
   }
-  const html = Object.keys(groups).map(g => '<h2>' + esc(g) + '</h2><div class="grid">' + groups[g]
-    .sort((a, b) => (RANK[b.level] ?? 0) - (RANK[a.level] ?? 0) || a.name.localeCompare(b.name))
-    .map(card).join('') + '</div>').join('');
   document.getElementById('groups').innerHTML = html || '<p class="empty">Nothing to show. Everything is operational.</p>';
 
   const hist = (data.history || []).slice(0, 25);
@@ -175,20 +324,71 @@ function render() {
   document.getElementById('footer').textContent = 'Down Detector v' + data.version + ' - ' + svcs.length + ' checks';
 }
 
+function pill(level) {
+  return '<span class="pill lvl-' + esc(level) + '" data-icon="' + esc(ICON[level] || '') + '" data-tip="' + esc(TIP[level] || '') + '">' + esc(LABEL[level] || level) + '</span>';
+}
+
 function card(s) {
   const link = safeUrl(s.pageUrl);
-  const name = link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener" data-tip="Open the vendor status page">' + esc(s.name) + '</a>' : esc(s.name);
+  const name = link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener">' + esc(s.name) + '</a>' : esc(s.name);
   const inc = (s.incidents || []).filter(i => i.title && i.title !== s.summary).slice(0, 5).map(i => {
     const u = safeUrl(i.url);
     return '<li>' + (u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(i.title) + '</a>' : esc(i.title)) + '</li>';
   }).join('');
   const kind = s.type === 'http' ? 'Direct probe' : 'Vendor status';
-  return '<div class="svc"><div class="name">' + name + '</div>' +
-    '<span class="pill lvl-' + esc(s.level) + '" data-tip="' + esc(TIP[s.level] || '') + '">' + esc(LABEL[s.level] || s.level) + '</span>' +
-    '<div class="detail">' + esc(s.summary) + '</div>' + (inc ? '<ul>' + inc + '</ul>' : '') +
-    '<div class="meta">' + kind + (s.level !== 'ok' && s.since ? ' - since ' + esc(fmt(s.since)) : '') + '</div></div>';
+  const viz = s.level === 'skipped' ? '' : '<div class="viz">' + barsHtml(s) + (s.type === 'http' ? sparkHtml(s) : '') + '</div>';
+  return '<div class="svc"><div class="name">' + name + '</div>' + pill(s.level) +
+    '<div class="detail">' + esc(s.summary) + '</div>' + (inc ? '<ul>' + inc + '</ul>' : '') + viz +
+    '<div class="meta">' + kind + (s.level !== 'ok' && s.level !== 'skipped' && s.since ? ' - since ' + esc(fmt(s.since)) : '') + '</div></div>';
 }
 
+function tile(s) {
+  const u = s.level === 'skipped' ? 'needs setup' : pctText(uptime(s.samples)) + ' (24h)';
+  const link = safeUrl(s.pageUrl);
+  const inner = '<div class="t-name">' + esc(s.name) + '</div><div><div class="t-lvl">' + esc((ICON[s.level] || '') + ' ' + (LABEL[s.level] || s.level)) + '</div><div class="t-sub">' + esc(u) + '</div></div>';
+  return '<div class="tile lvl-' + esc(s.level) + '" data-tt="' + esc(s.summary) + '">' +
+    (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;display:contents">' + inner + '</a>' : inner) + '</div>';
+}
+
+// ---------- tooltip layer ----------
+const tt = document.getElementById('tt');
+function showTip(text, x, y) {
+  tt.textContent = text;
+  tt.style.display = 'block';
+  const r = tt.getBoundingClientRect();
+  let left = x + 12, top = y + 14;
+  if (left + r.width > innerWidth - 8) left = x - r.width - 12;
+  if (top + r.height > innerHeight - 8) top = y - r.height - 10;
+  tt.style.left = Math.max(8, left) + 'px';
+  tt.style.top = Math.max(8, top) + 'px';
+}
+function hideTip() { tt.style.display = 'none'; }
+document.addEventListener('mousemove', e => {
+  const sp = e.target.closest && e.target.closest('.spark');
+  document.querySelectorAll('.spark .xh').forEach(l => { if (!sp || !sp.contains(l)) l.setAttribute('visibility', 'hidden'); });
+  if (sp) return sparkHover(sp, e);
+  const el = e.target.closest && e.target.closest('[data-tt]');
+  if (el && el.dataset.tt) showTip(el.dataset.tt, e.clientX, e.clientY); else hideTip();
+});
+document.addEventListener('mouseleave', hideTip);
+function sparkHover(sp, e) {
+  const s = data.services.find(x => x.id === sp.dataset.id);
+  const svg = sp.querySelector('svg');
+  const r = svg.getBoundingClientRect();
+  if (e.clientY > r.bottom + 2) { hideTip(); return; }
+  const { start, end } = windowOf();
+  const t = start + ((e.clientX - r.left) / r.width) * (end - start);
+  let best = null;
+  for (const p of s.samples || []) if (p[0] >= start && (!best || Math.abs(p[0] - t) < Math.abs(best[0] - t))) best = p;
+  if (!best) return hideTip();
+  const xv = ((best[0] - start) / (end - start)) * 600;
+  const xh = svg.querySelector('.xh');
+  xh.setAttribute('x1', xv); xh.setAttribute('x2', xv); xh.setAttribute('visibility', 'visible');
+  const lvl = CODE_LEVEL[best[1]];
+  showTip(hm(best[0]) + '\n' + (best[2] !== null && best[2] !== undefined ? best[2] + ' ms' : 'no response') + (lvl !== 'ok' ? ' - ' + LABEL[lvl] : ''), e.clientX, e.clientY);
+}
+
+// ---------- controls ----------
 function setAuto(on) {
   document.getElementById('btn-auto').setAttribute('aria-pressed', String(on));
   clearInterval(timer);
@@ -200,9 +400,15 @@ function applyTheme(t) {
   else document.documentElement.removeAttribute('data-theme');
   document.getElementById('btn-theme').textContent = 'Theme: ' + (t || 'system');
 }
-
+function setTiles(on) {
+  tiles = on;
+  document.getElementById('btn-view').setAttribute('aria-pressed', String(on));
+  if (!tv) store('dd-tiles', on ? '1' : '0');
+  if (data) render();
+}
 document.getElementById('btn-refresh').onclick = load;
 document.getElementById('btn-auto').onclick = e => setAuto(e.currentTarget.getAttribute('aria-pressed') !== 'true');
+document.getElementById('btn-view').onclick = () => setTiles(!tiles);
 document.getElementById('btn-problems').onclick = e => {
   problemsOnly = !problemsOnly;
   e.currentTarget.setAttribute('aria-pressed', String(problemsOnly));
@@ -221,10 +427,12 @@ document.getElementById('btn-theme').onclick = () => {
   applyTheme(next);
 };
 
+if (tv) document.body.classList.add('tv');
 problemsOnly = store('dd-problems') === '1';
 document.getElementById('btn-problems').setAttribute('aria-pressed', String(problemsOnly));
 applyTheme(store('dd-theme') || '');
-setAuto(store('dd-auto') !== '0');
+setTiles(tv || store('dd-tiles') === '1');
+setAuto(tv || store('dd-auto') !== '0');
 load();
 </script>
 </body>

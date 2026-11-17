@@ -124,6 +124,25 @@ test('run 5 (live): both recover -> recovery alert at low priority', async () =>
   assert.equal(ntfy.headers['x-priority'], '3');
   const status = JSON.parse(readFileSync(join(dir, 'site', 'status.json'), 'utf8'));
   assert.equal(status.history[0].kind, 'recovered');
+  // 24h sample history accumulates one sample per run and carries probe latency
+  const probe = status.services.find((s) => s.id === 'probe');
+  assert.equal(probe.samples.length, 5);
+  assert.deepEqual(probe.samples.map((x) => x[1]), ['o', 'o', 'x', 'x', 'o']);
+  assert.ok(Number.isInteger(probe.samples[0][2]));
+  assert.equal(status.historyHours, 24);
+  assert.equal(probe.slowMs, 8000);
+});
+
+test('samples older than the history window are pruned', async () => {
+  const statePath = join(dir, 'state', 'state.json');
+  const st = JSON.parse(readFileSync(statePath, 'utf8'));
+  const old = Math.floor(Date.now() / 1000) - 25 * 3600;
+  st.services.probe.samples.unshift([old, 'o', 10]);
+  writeFileSync(statePath, JSON.stringify(st));
+  await go(false);
+  const probe = JSON.parse(readFileSync(join(dir, 'site', 'status.json'), 'utf8')).services.find((s) => s.id === 'probe');
+  assert.ok(probe.samples.every((x) => x[0] > old));
+  assert.equal(probe.samples.length, 6);
 });
 
 test('--test-alert sends a TEST message to every channel', async () => {

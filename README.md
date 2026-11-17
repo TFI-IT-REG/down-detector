@@ -1,6 +1,6 @@
 # Down Detector
 
-v1.0.0. Watches the services we depend on and posts to Teams and phone push at the first sign of trouble.
+v1.1.0. Watches the services we depend on and posts to Teams and phone push at the first sign of trouble.
 
 It runs on GitHub Actions every 5 minutes and uses two kinds of checks:
 
@@ -8,6 +8,8 @@ It runs on GitHub Actions every 5 minutes and uses two kinds of checks:
 - **Direct probes** that load a real login page or API, for NetSuite, GitHub, Microsoft sign-in, Outlook and Google sign-in. These usually catch a problem first.
 
 Alerts only go out when something changes: a new problem, a worse problem, a new incident on a service that's already down, or a recovery. Several changes in one run are batched into one message.
+
+The status page shows a 24-hour history bar and uptime % per service, response time charts for direct probes, and a tile view for wall screens.
 
 It ships in **dry-run mode**. It checks everything and shows what it would send, but sends nothing until you set `LIVE=true`.
 
@@ -22,7 +24,8 @@ It ships in **dry-run mode**. It checks everything and shows what it would send,
 | Send a test alert | Actions > Down Detector > Run workflow > tick "Send a TEST message" |
 | Check a new feed's format | Actions > Down Detector > Run workflow > tick "Print raw responses" |
 | See the last run | Actions > Down Detector > latest run > Summary |
-| Status page | URL in the `PAGE_URL` variable (if `PUBLISH_PAGE=true`) |
+| Status page | https://svisnesky.github.io/down-detector/ |
+| Wall screen view | https://svisnesky.github.io/down-detector/?view=tv |
 | Run tests locally | `npm test` |
 
 Levels: **Down** (high-priority push), **Degraded**, **Can't check** (status source unreadable 3 runs in a row), **Maintenance** (silent by default), **Recovered** (quiet push).

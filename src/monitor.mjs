@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Down Detector v1.0.0
+// Down Detector v1.1.0
 // Polls vendor status sources and direct probes, alerts on state changes.
 // Dry run by default. Set LIVE=true to actually send notifications.
 //
@@ -14,7 +14,7 @@ import { runCheck } from './checks.mjs';
 import { evaluate, LABEL } from './engine.mjs';
 import { buildRequests, channels, describeRequest, sendAll } from './notify.mjs';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -97,8 +97,15 @@ async function main() {
 
   const nextState = { version: 1, lastRun: now, services: {}, history: prevState.history || [] };
   const changes = [];
+  const HISTORY_HOURS = Number(env.HISTORY_HOURS || 24);
+  const CODE = { ok: 'o', maintenance: 'm', unknown: 'u', degraded: 'd', down: 'x', skipped: 's' };
+  const nowSec = Math.floor(Date.parse(now) / 1000);
+  const cutoff = nowSec - HISTORY_HOURS * 3600;
   services.forEach((s, i) => {
-    const { state, change } = evaluate(s, results[i], prevState.services?.[s.id], defaults, now);
+    const prev = prevState.services?.[s.id];
+    const { state, change } = evaluate(s, results[i], prev, defaults, now);
+    // Rolling sample history for the dashboard: [epochSeconds, levelCode, latencyMs|null]
+    state.samples = [...(prev?.samples || []).filter((x) => x[0] >= cutoff), [nowSec, CODE[results[i].level] ?? 'u', results[i].latencyMs ?? null]];
     nextState.services[s.id] = state;
     if (change) changes.push(change);
   });
@@ -147,6 +154,7 @@ async function main() {
     generatedAt: now,
     live: LIVE,
     intervalMinutes: Number(env.INTERVAL_MINUTES || 5),
+    historyHours: HISTORY_HOURS,
     services: services.map((s, i) => {
       const st = nextState.services[s.id];
       const r = results[i];
@@ -163,6 +171,8 @@ async function main() {
         since: st.since,
         lastChecked: st.lastChecked,
         pageUrl: s.pageUrl || (s.type === 'statuspage' ? s.url : ''),
+        slowMs: s.type === 'http' ? s.slowMs ?? defaults.slowMs ?? 8000 : null,
+        samples: st.samples,
       };
     }),
     history: nextState.history.slice(0, 50),
