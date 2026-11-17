@@ -1,6 +1,6 @@
 # Down Detector
 
-v1.1.0. Watches the services we depend on and posts to Teams and phone push at the first sign of trouble.
+v1.2.0. Watches the services we depend on and posts to Teams and phone push at the first sign of trouble.
 
 It runs on GitHub Actions every 5 minutes and uses two kinds of checks:
 
@@ -117,6 +117,13 @@ To watch only some components, add `"components": ["Zoom Meetings", "Zoom Phone"
 ```
 Options: `expectStatus` (e.g. `[200]`), `expectText`, `slowMs`, `timeoutMs`, `failThreshold`.
 
+**A port that should accept connections** (VPN gateway, anything without a web page):
+```json
+{ "id": "vpn", "name": "VPN (WatchGuard SSL)", "group": "Network", "type": "tcp", "host": "${VPN_HOST}", "port": 443 }
+```
+
+**Keep private hostnames out of this public repo.** Write `${NAME}` in any field and add a repo secret with that name. Then map it in `.github/workflows/monitor.yml` under `env:` (for example `VPN_HOST: ${{ secrets.VPN_HOST }}`). Until the secret exists, the service shows "Not configured" and never alerts.
+
 **RSS feed of active incidents**:
 ```json
 { "id": "x", "name": "X", "type": "rss", "url": "https://.../feed", "maxAgeHours": 24 }
@@ -177,6 +184,7 @@ cron (5 min) -> restore state from Actions cache
 ## KNOWN GAPS
 
 - **NetSuite:** we only probe the login page. The official status page (status.netsuite.com) format hasn't been verified yet. A probe of our own account's domain or a health RESTlet would catch account-specific issues.
-- **WMS:** not added yet. Need the vendor name and their status page.
+- **WMS:** NetSuite WMS is covered by the NetSuite check. Powerhouse WMS is not added yet; it needs its login URL.
+- **On-prem apps:** can't be reached from GitHub's servers. That needs a monitor running inside the network (Uptime Kuma recommended).
 - **Cloudflare:** disabled for now. Their page always shows some of 300+ data centers in partial outage, so unfiltered it reads Degraded around the clock. When we adopt it, enable it with a `components` filter for the products we use (Workers, Pages, D1, Access).
 - Probes run from GitHub's servers, not our network, so they won't catch our own ISP or VPN problems.

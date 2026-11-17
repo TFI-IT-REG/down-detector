@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Down Detector v1.1.0
+// Down Detector v1.2.0
 // Polls vendor status sources and direct probes, alerts on state changes.
 // Dry run by default. Set LIVE=true to actually send notifications.
 //
@@ -14,7 +14,7 @@ import { runCheck } from './checks.mjs';
 import { evaluate, LABEL } from './engine.mjs';
 import { buildRequests, channels, describeRequest, sendAll } from './notify.mjs';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -171,7 +171,7 @@ async function main() {
         since: st.since,
         lastChecked: st.lastChecked,
         pageUrl: s.pageUrl || (s.type === 'statuspage' ? s.url : ''),
-        slowMs: s.type === 'http' ? s.slowMs ?? defaults.slowMs ?? 8000 : null,
+        slowMs: s.type === 'http' || s.type === 'tcp' ? s.slowMs ?? defaults.slowMs ?? 8000 : null,
         samples: st.samples,
       };
     }),

@@ -17,6 +17,14 @@
       "pageUrl": "https://status.netsuite.com/"
     },
     {
+      "id": "vpn",
+      "name": "VPN (WatchGuard SSL)",
+      "group": "Network",
+      "type": "tcp",
+      "host": "${VPN_HOST}",
+      "port": 443
+    },
+    {
       "id": "github",
       "name": "GitHub",
       "group": "Dev",

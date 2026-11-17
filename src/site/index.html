@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Down Detector status page v1.1.0 -->
+<!-- Down Detector status page v1.2.0 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -335,8 +335,8 @@ function card(s) {
     const u = safeUrl(i.url);
     return '<li>' + (u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(i.title) + '</a>' : esc(i.title)) + '</li>';
   }).join('');
-  const kind = s.type === 'http' ? 'Direct probe' : 'Vendor status';
-  const viz = s.level === 'skipped' ? '' : '<div class="viz">' + barsHtml(s) + (s.type === 'http' ? sparkHtml(s) : '') + '</div>';
+  const kind = s.type === 'http' ? 'Direct probe' : s.type === 'tcp' ? 'Port check' : 'Vendor status';
+  const viz = s.level === 'skipped' ? '' : '<div class="viz">' + barsHtml(s) + (s.type === 'http' || s.type === 'tcp' ? sparkHtml(s) : '') + '</div>';
   return '<div class="svc"><div class="name">' + name + '</div>' + pill(s.level) +
     '<div class="detail">' + esc(s.summary) + '</div>' + (inc ? '<ul>' + inc + '</ul>' : '') + viz +
     '<div class="meta">' + kind + (s.level !== 'ok' && s.level !== 'skipped' && s.since ? ' - since ' + esc(fmt(s.since)) : '') + '</div></div>';

@@ -1,4 +1,4 @@
-// Down Detector v1.0.0 - state transitions and alert decisions (pure, no I/O)
+// Down Detector v1.2.0 - state transitions and alert decisions (pure, no I/O)
 
 export const LEVEL_RANK = { ok: 0, maintenance: 1, unknown: 2, degraded: 3, down: 4 };
 
@@ -52,7 +52,7 @@ export function evaluate(service, result, prev, defaults = {}, now = new Date().
   if (result.level === 'unknown') {
     state.unknownCount = (prev?.unknownCount ?? 0) + 1;
     if (state.unknownCount < unknownThreshold) hold = true;
-  } else if (service.type === 'http' && (result.level === 'down' || result.level === 'degraded')) {
+  } else if ((service.type === 'http' || service.type === 'tcp') && (result.level === 'down' || result.level === 'degraded')) {
     state.failCount = (prev?.failCount ?? 0) + 1;
     if (state.failCount < failThreshold) hold = true;
   }

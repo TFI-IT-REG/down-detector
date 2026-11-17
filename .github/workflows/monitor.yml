@@ -1,4 +1,4 @@
-# Down Detector v1.1.1
+# Down Detector v1.2.0
 name: Down Detector
 
 on:
@@ -43,6 +43,8 @@ jobs:
       M365_CLIENT_ID: ${{ secrets.M365_CLIENT_ID }}
       M365_CLIENT_SECRET: ${{ secrets.M365_CLIENT_SECRET }}
       HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
+      # Private hostnames referenced as ${NAME} in config/services.json
+      VPN_HOST: ${{ secrets.VPN_HOST }}
     steps:
       - uses: actions/checkout@v4
 

@@ -165,3 +165,38 @@ test('notify: requests per channel and redaction', () => {
   const redacted = JSON.stringify(reqs.map(describeRequest));
   assert.doesNotMatch(redacted, /SECRET|secret-topic|tok&|=usr/);
 });
+
+// ---------- tcp + secret placeholders (v1.2.0) ----------
+import net from 'node:net';
+import { runCheck, resolveSecrets } from '../src/checks.mjs';
+
+test('resolveSecrets substitutes env and reports missing names', () => {
+  const svc = { id: 'v', type: 'tcp', host: '${VPN_HOST}', port: 443, name: 'VPN' };
+  assert.deepEqual(resolveSecrets(svc, { VPN_HOST: 'vpn.example.com' }).svc.host, 'vpn.example.com');
+  assert.deepEqual(resolveSecrets(svc, {}).missing, ['VPN_HOST']);
+});
+
+test('tcp check: missing secret is skipped, not down', async () => {
+  const r = await runCheck({ id: 'v', type: 'tcp', host: '${VPN_HOST}', port: 443 }, {}, {});
+  assert.equal(r.level, 'skipped');
+  assert.match(r.summary, /needs secret VPN_HOST/);
+});
+
+test('tcp check: open port is ok, closed port is down after retry', async () => {
+  const srv = net.createServer((s) => s.end()).listen(0, '127.0.0.1');
+  await new Promise((r) => srv.once('listening', r));
+  const port = srv.address().port;
+  const ok = await runCheck({ id: 't', type: 'tcp', host: '${H}', port }, { retryDelayMs: 0 }, { H: '127.0.0.1' });
+  assert.equal(ok.level, 'ok');
+  assert.ok(Number.isInteger(ok.latencyMs));
+  srv.close();
+  await new Promise((r) => srv.once('close', r));
+  const bad = await runCheck({ id: 't', type: 'tcp', host: '127.0.0.1', port }, { retryDelayMs: 0 }, {});
+  assert.equal(bad.level, 'down');
+  assert.match(bad.summary, /ECONNREFUSED.*failed twice/);
+});
+
+test('tcp check: bad config is unknown', async () => {
+  const r = await runCheck({ id: 't', type: 'tcp', host: 'x', port: 'abc' }, {}, {});
+  assert.equal(r.level, 'unknown');
+});

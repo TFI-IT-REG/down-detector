@@ -1,4 +1,6 @@
-// Down Detector v1.0.0 - check types and response parsers
+// Down Detector v1.2.0 - check types and response parsers
+
+import net from 'node:net';
 
 import { worst } from './engine.mjs';
 
@@ -224,9 +226,74 @@ async function checkHttp(svc, defaults) {
   return { ...r, incidents: r.level === 'ok' ? [] : [{ id: 'probe', title: r.summary, url: svc.pageUrl || svc.url }] };
 }
 
+// ---------- TCP port probe (VPN gateways, on-prem services) ----------
+
+function tcpAttempt(host, port, timeoutMs, slowMs) {
+  return new Promise((resolve) => {
+    const start = performance.now();
+    const sock = net.connect({ host, port });
+    const done = (r) => {
+      sock.destroy();
+      resolve({ ...r, latencyMs: Math.round(performance.now() - start) });
+    };
+    sock.setTimeout(timeoutMs);
+    sock.once('connect', () => {
+      const ms = Math.round(performance.now() - start);
+      if (ms > slowMs) done({ level: 'degraded', summary: `Port ${port} open but slow: ${ms} ms (limit ${slowMs} ms)` });
+      else done({ level: 'ok', summary: `Port ${port} open in ${ms} ms` });
+    });
+    sock.once('timeout', () => done({ level: 'down', summary: `Port ${port}: timed out after ${timeoutMs} ms` }));
+    sock.once('error', (e) => done({ level: 'down', summary: `Port ${port}: ${e.code || e.message}` }));
+  });
+}
+
+async function checkTcp(svc, defaults) {
+  const timeoutMs = svc.timeoutMs ?? defaults.timeoutMs ?? 10000;
+  const slowMs = svc.slowMs ?? defaults.slowMs ?? 8000;
+  const retryDelayMs = svc.retryDelayMs ?? defaults.retryDelayMs ?? 15000;
+  const port = Number(svc.port);
+  if (!svc.host || !Number.isInteger(port) || port < 1 || port > 65535) {
+    return { level: 'unknown', summary: 'TCP check needs "host" and a valid "port"', incidents: [] };
+  }
+  let r = await tcpAttempt(svc.host, port, timeoutMs, slowMs);
+  if (r.level !== 'ok') {
+    await sleep(retryDelayMs);
+    const r2 = await tcpAttempt(svc.host, port, timeoutMs, slowMs);
+    r = r2.level === 'ok' ? r2 : { ...r2, summary: `${r2.summary} (failed twice, ${Math.round(retryDelayMs / 1000)}s apart)` };
+  }
+  return { ...r, incidents: r.level === 'ok' ? [] : [{ id: 'probe', title: r.summary, url: svc.pageUrl || '' }] };
+}
+
 // ---------- Dispatcher ----------
 
-export async function runCheck(svc, defaults = {}, env = process.env, { probe = false } = {}) {
+/**
+ * Replace ${NAME} in string fields with env values so private hostnames can live in GitHub secrets
+ * instead of the public config. Returns the list of missing variable names.
+ */
+export function resolveSecrets(svc, env = process.env) {
+  const missing = new Set();
+  const sub = (v) =>
+    typeof v === 'string'
+      ? v.replace(/\$\{([A-Z0-9_]+)\}/g, (_, n) => {
+          if (env[n] === undefined || env[n] === '') {
+            missing.add(n);
+            return '';
+          }
+          return env[n];
+        })
+      : Array.isArray(v)
+        ? v.map(sub)
+        : v && typeof v === 'object'
+          ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, sub(x)]))
+          : v;
+  return { svc: sub(svc), missing: [...missing] };
+}
+
+export async function runCheck(rawSvc, defaults = {}, env = process.env, { probe = false } = {}) {
+  const { svc, missing } = resolveSecrets(rawSvc, env);
+  if (missing.length) {
+    return { level: 'skipped', summary: `Not configured (needs secret${missing.length > 1 ? 's' : ''} ${missing.join(', ')})`, incidents: [] };
+  }
   const timeoutMs = svc.timeoutMs ?? defaults.timeoutMs ?? 10000;
   const show = (raw) => {
     if (probe) console.log(`\n--- PROBE ${svc.id} (${svc.type}) ---\n${(typeof raw === 'string' ? raw : JSON.stringify(raw)).slice(0, 1500)}\n`);
@@ -250,6 +317,8 @@ export async function runCheck(svc, defaults = {}, env = process.env, { probe = 
       }
       case 'http':
         return await checkHttp(svc, defaults);
+      case 'tcp':
+        return await checkTcp(svc, defaults);
       default:
         return { level: 'unknown', summary: `Unknown check type "${svc.type}"`, incidents: [] };
     }
