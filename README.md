@@ -173,4 +173,5 @@ cron (5 min) -> restore state from Actions cache
 
 - **NetSuite:** we only probe the login page. The official status page (status.netsuite.com) format hasn't been verified yet. A probe of our own account's domain or a health RESTlet would catch account-specific issues.
 - **WMS:** not added yet. Need the vendor name and their status page.
+- **Cloudflare:** disabled for now. Their page always shows some of 300+ data centers in partial outage, so unfiltered it reads Degraded around the clock. When we adopt it, enable it with a `components` filter for the products we use (Workers, Pages, D1, Access).
 - Probes run from GitHub's servers, not our network, so they won't catch our own ISP or VPN problems.

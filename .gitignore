@@ -1,4 +1,4 @@
-state/
-site/
+/state/
+/site/
 node_modules/
 .env

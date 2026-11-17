@@ -1,0 +1,231 @@
+<!doctype html>
+<!-- Down Detector status page v1.0.0 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service Status</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #5d6673; --border: #dde1e6;
+  --ok: #1f8a4c; --ok-bg: #e6f4ec; --warn: #a15c00; --warn-bg: #fdf1df;
+  --down: #c4302b; --down-bg: #fbe7e6; --info: #2f5fb3; --info-bg: #e7eefa;
+  --gray: #6b7280; --gray-bg: #eef0f3; --tip-bg: #1b1f24; --tip-text: #fff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #9aa3ad; --border: #2c323a;
+    --ok: #4cc27f; --ok-bg: #16301f; --warn: #e5a54a; --warn-bg: #33270f;
+    --down: #ff6b63; --down-bg: #3a1716; --info: #7ea6ef; --info-bg: #172440;
+    --gray: #9aa3ad; --gray-bg: #23282f; --tip-bg: #e6e8eb; --tip-text: #111418;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #9aa3ad; --border: #2c323a;
+  --ok: #4cc27f; --ok-bg: #16301f; --warn: #e5a54a; --warn-bg: #33270f;
+  --down: #ff6b63; --down-bg: #3a1716; --info: #7ea6ef; --info-bg: #172440;
+  --gray: #9aa3ad; --gray-bg: #23282f; --tip-bg: #e6e8eb; --tip-text: #111418;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+h1 { font-size: 20px; margin: 0; }
+h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 24px 0 8px; }
+.toolbar { display: flex; gap: 6px; flex-wrap: wrap; }
+button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; position: relative; }
+button[aria-pressed="true"] { background: var(--info-bg); border-color: var(--info); color: var(--info); }
+[data-tip]:hover::after, [data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; right: 0; top: calc(100% + 6px); z-index: 10;
+  background: var(--tip-bg); color: var(--tip-text); font-size: 12px; padding: 5px 8px; border-radius: 4px;
+  white-space: normal; width: max-content; max-width: 240px; pointer-events: none;
+}
+.banner { padding: 14px 16px; border-radius: 8px; font-weight: 600; border: 1px solid var(--border); }
+.banner small { display: block; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.lvl-ok { background: var(--ok-bg); color: var(--ok); }
+.lvl-degraded, .lvl-unknown { background: var(--warn-bg); color: var(--warn); }
+.lvl-down { background: var(--down-bg); color: var(--down); }
+.lvl-maintenance { background: var(--info-bg); color: var(--info); }
+.lvl-skipped { background: var(--gray-bg); color: var(--gray); }
+.stale { margin-top: 8px; padding: 10px 14px; border-radius: 8px; background: var(--warn-bg); color: var(--warn); }
+.grid { display: grid; gap: 8px; }
+.svc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
+.svc .name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.svc .name a { color: inherit; }
+.pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; align-self: start; white-space: nowrap; position: relative; }
+.svc .detail { grid-column: 1 / -1; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.svc ul { grid-column: 1 / -1; margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
+.svc ul a { color: var(--info); }
+.meta { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.hist { background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.hist div { padding: 8px 12px; border-top: 1px solid var(--border); font-size: 13px; overflow-wrap: anywhere; }
+.hist div:first-child { border-top: 0; }
+.hist time { color: var(--muted); margin-right: 8px; }
+.help { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 4px 16px; margin-bottom: 16px; }
+.help h3 { font-size: 15px; margin: 12px 0 4px; }
+.help p, .help li { font-size: 14px; color: var(--muted); }
+.empty { color: var(--muted); font-size: 13px; padding: 8px 12px; }
+footer { margin-top: 32px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Service Status</h1>
+    <div class="toolbar">
+      <button id="btn-problems" aria-pressed="false" data-tip="Hide services that are working normally" aria-label="Show problems only">Problems only</button>
+      <button id="btn-auto" aria-pressed="true" data-tip="Reload the data every 60 seconds while this tab is open" aria-label="Auto refresh">Auto refresh</button>
+      <button id="btn-refresh" data-tip="Reload the latest results now" aria-label="Refresh now">Refresh</button>
+      <button id="btn-theme" data-tip="Switch between light, dark and system theme" aria-label="Theme">Theme</button>
+      <button id="btn-help" aria-expanded="false" data-tip="How this page works" aria-label="How it works">?</button>
+    </div>
+  </header>
+
+  <section id="help" class="help" hidden>
+    <h3>How it works</h3>
+    <p>A scheduled GitHub Actions job checks every service about every 5 minutes. GitHub can delay scheduled runs, so gaps of 10 to 15 minutes are normal.</p>
+    <ul>
+      <li><b>Vendor status pages</b> (GitHub, Cloudflare, Google, Azure, Microsoft 365) are read from their official feeds. These are accurate but vendors often post late.</li>
+      <li><b>Direct probes</b> load a real login page or API from GitHub's servers. These usually catch problems first. A probe only counts as failed if it fails twice, 15 seconds apart.</li>
+      <li><b>Alerts</b> go to Teams and phone push only when something changes: a new problem, a worse problem, a new incident, or recovery.</li>
+      <li><b>Can't check</b> means the status source itself could not be read 3 runs in a row. That's a monitor problem, not necessarily a vendor problem.</li>
+      <li><b>Not configured</b> means the check needs credentials that haven't been added yet.</li>
+    </ul>
+    <p>A direct probe failing from GitHub's servers doesn't always mean it's down for us. Check the vendor link before escalating.</p>
+  </section>
+
+  <div id="banner" class="banner lvl-skipped">Loading...</div>
+  <div id="stale" class="stale" hidden></div>
+  <div id="groups"></div>
+
+  <h2>Recent alerts</h2>
+  <div id="history" class="hist"></div>
+
+  <footer id="footer"></footer>
+</main>
+<script>
+const LABEL = { ok: 'Operational', degraded: 'Degraded', down: 'Down', maintenance: 'Maintenance', unknown: "Can't check", skipped: 'Not configured' };
+const RANK = { ok: 0, skipped: 0, maintenance: 1, unknown: 2, degraded: 3, down: 4 };
+const TIP = {
+  ok: 'Working normally',
+  degraded: 'Partially working, slow, or the vendor reports an issue',
+  down: 'Not working or the vendor reports a major outage',
+  maintenance: 'Vendor maintenance in progress',
+  unknown: 'The status source could not be read',
+  skipped: 'Needs credentials before it can run'
+};
+let data = null, problemsOnly = false, timer = null;
+
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function safeUrl(u) { try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:' ? x.href : ''; } catch (e) { return ''; } }
+function ago(iso) {
+  const s = Math.round((Date.now() - Date.parse(iso)) / 1000);
+  if (!isFinite(s)) return '';
+  if (s < 90) return 'just now';
+  if (s < 5400) return Math.round(s / 60) + ' min ago';
+  if (s < 129600) return Math.round(s / 3600) + ' h ago';
+  return Math.round(s / 86400) + ' d ago';
+}
+function fmt(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString(); }
+
+async function load() {
+  try {
+    const r = await fetch('status.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    data = await r.json();
+    render();
+  } catch (e) {
+    document.getElementById('banner').className = 'banner lvl-unknown';
+    document.getElementById('banner').textContent = 'Could not load status data (' + e.message + ')';
+  }
+}
+
+function render() {
+  const svcs = data.services;
+  const worst = svcs.reduce((w, s) => (RANK[s.level] ?? 2) > (RANK[w] ?? 0) ? s.level : w, 'ok');
+  const bad = svcs.filter(s => (RANK[s.level] ?? 0) >= 2);
+  const banner = document.getElementById('banner');
+  banner.className = 'banner lvl-' + worst;
+  banner.innerHTML = (bad.length ? esc(bad.length + ' service' + (bad.length > 1 ? 's' : '') + ' with issues: ' + bad.map(s => s.name).join(', ')) : 'All monitored services operational') +
+    '<small>Last checked ' + esc(ago(data.generatedAt)) + ' (' + esc(fmt(data.generatedAt)) + ')' + (data.live ? '' : ' - alerts in DRY RUN mode') + '</small>';
+
+  const ageMin = (Date.now() - Date.parse(data.generatedAt)) / 60000;
+  const stale = document.getElementById('stale');
+  const limit = Math.max(30, (data.intervalMinutes || 5) * 6);
+  stale.hidden = ageMin < limit;
+  stale.textContent = 'This data is ' + Math.round(ageMin) + ' minutes old. The monitor may have stopped running. Check the GitHub Actions tab.';
+
+  const groups = {};
+  for (const s of svcs) {
+    if (problemsOnly && (RANK[s.level] ?? 0) < 1) continue;
+    (groups[s.group] = groups[s.group] || []).push(s);
+  }
+  const html = Object.keys(groups).map(g => '<h2>' + esc(g) + '</h2><div class="grid">' + groups[g]
+    .sort((a, b) => (RANK[b.level] ?? 0) - (RANK[a.level] ?? 0) || a.name.localeCompare(b.name))
+    .map(card).join('') + '</div>').join('');
+  document.getElementById('groups').innerHTML = html || '<p class="empty">Nothing to show. Everything is operational.</p>';
+
+  const hist = (data.history || []).slice(0, 25);
+  document.getElementById('history').innerHTML = hist.length ? hist.map(h =>
+    '<div><time title="' + esc(fmt(h.at)) + '">' + esc(ago(h.at)) + '</time><span class="pill lvl-' + esc(h.to) + '">' +
+    esc(h.to === 'ok' ? 'Recovered' : (h.kind === 'updated' ? 'Update' : LABEL[h.to] || h.to)) + '</span> <b>' + esc(h.name) + '</b> ' + esc(h.summary) +
+    (h.live ? '' : ' <i>(dry run, not sent)</i>') + '</div>').join('') : '<div class="empty">No alerts yet.</div>';
+
+  document.getElementById('footer').textContent = 'Down Detector v' + data.version + ' - ' + svcs.length + ' checks';
+}
+
+function card(s) {
+  const link = safeUrl(s.pageUrl);
+  const name = link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener" data-tip="Open the vendor status page">' + esc(s.name) + '</a>' : esc(s.name);
+  const inc = (s.incidents || []).filter(i => i.title && i.title !== s.summary).slice(0, 5).map(i => {
+    const u = safeUrl(i.url);
+    return '<li>' + (u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(i.title) + '</a>' : esc(i.title)) + '</li>';
+  }).join('');
+  const kind = s.type === 'http' ? 'Direct probe' : 'Vendor status';
+  return '<div class="svc"><div class="name">' + name + '</div>' +
+    '<span class="pill lvl-' + esc(s.level) + '" data-tip="' + esc(TIP[s.level] || '') + '">' + esc(LABEL[s.level] || s.level) + '</span>' +
+    '<div class="detail">' + esc(s.summary) + '</div>' + (inc ? '<ul>' + inc + '</ul>' : '') +
+    '<div class="meta">' + kind + (s.level !== 'ok' && s.since ? ' - since ' + esc(fmt(s.since)) : '') + '</div></div>';
+}
+
+function setAuto(on) {
+  document.getElementById('btn-auto').setAttribute('aria-pressed', String(on));
+  clearInterval(timer);
+  if (on) timer = setInterval(load, 60000);
+  store('dd-auto', on ? '1' : '0');
+}
+function applyTheme(t) {
+  if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  else document.documentElement.removeAttribute('data-theme');
+  document.getElementById('btn-theme').textContent = 'Theme: ' + (t || 'system');
+}
+
+document.getElementById('btn-refresh').onclick = load;
+document.getElementById('btn-auto').onclick = e => setAuto(e.currentTarget.getAttribute('aria-pressed') !== 'true');
+document.getElementById('btn-problems').onclick = e => {
+  problemsOnly = !problemsOnly;
+  e.currentTarget.setAttribute('aria-pressed', String(problemsOnly));
+  store('dd-problems', problemsOnly ? '1' : '0');
+  if (data) render();
+};
+document.getElementById('btn-help').onclick = e => {
+  const h = document.getElementById('help');
+  h.hidden = !h.hidden;
+  e.currentTarget.setAttribute('aria-expanded', String(!h.hidden));
+};
+document.getElementById('btn-theme').onclick = () => {
+  const order = ['', 'light', 'dark'];
+  const next = order[(order.indexOf(store('dd-theme') || '') + 1) % 3];
+  store('dd-theme', next);
+  applyTheme(next);
+};
+
+problemsOnly = store('dd-problems') === '1';
+document.getElementById('btn-problems').setAttribute('aria-pressed', String(problemsOnly));
+applyTheme(store('dd-theme') || '');
+setAuto(store('dd-auto') !== '0');
+load();
+</script>
+</body>
+</html>

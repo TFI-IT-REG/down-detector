@@ -86,7 +86,8 @@
       "name": "Cloudflare",
       "group": "Infrastructure",
       "type": "statuspage",
-      "url": "https://www.cloudflarestatus.com"
+      "url": "https://www.cloudflarestatus.com",
+      "enabled": false
     }
   ]
 }
