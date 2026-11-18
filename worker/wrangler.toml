@@ -1,0 +1,22 @@
+# Down Detector dispatcher v1.0.0
+# Starts the Down Detector workflow every 5 minutes. See worker/README.md.
+
+name = "down-detector-dispatcher"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+# Anything other than "false" means dry run: log only, never call GitHub.
+DRY_RUN = "true"
+GH_OWNER = "TFI-IT-REG"
+GH_REPO = "down-detector"
+GH_WORKFLOW = "monitor.yml"
+GH_REF = "main"
+
+# GITHUB_TOKEN is a secret. Set it with: npx wrangler secret put GITHUB_TOKEN
+
+[observability]
+enabled = true
