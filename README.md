@@ -76,6 +76,36 @@ GitHub can delay or quietly stop scheduled runs. It disables schedules after 60 
 
 If the monitor stops running, or alerts start failing to send, you hear about it from healthchecks.io.
 
+### 4b. On-time scheduler (Cloudflare Worker, recommended)
+
+GitHub's own 5-minute schedule is best effort and can go hours without running. `worker/scheduler.js` is a Cloudflare Worker that starts the workflow every 5 minutes instead. The GitHub schedule stays on as a backup. Extra runs are harmless because alerts only go out on a change. Everything is done in the browser. Nothing to install. Free plan.
+
+**Token (GitHub):**
+1. Profile picture > **Settings > Developer settings > Personal access tokens > Fine-grained tokens > Generate new token**.
+2. Name `down-detector-scheduler`. Resource owner **TFI-IT-REG**. Expiration 1 year, and put a renewal reminder on the calendar.
+3. **Only select repositories** > `down-detector`.
+4. **Permissions > Repository permissions > Actions: Read and write**. Leave everything else at No access.
+5. Generate and copy the token. If the org requires approval for tokens, an org owner approves it under **Org Settings > Personal access tokens > Pending requests**.
+
+**Worker (Cloudflare):**
+1. **Workers & Pages > Create > Create Worker** (Hello World template). Name it `down-detector-scheduler`. Deploy.
+2. **Edit code**, replace everything with the contents of `worker/scheduler.js`, **Deploy**.
+3. **Settings > Variables and Secrets > Add**: type **Secret**, name `GITHUB_TOKEN`, value the token.
+4. Same place: type **Text**, name `DRY_RUN`, value `true`.
+5. **Settings > Triggers > Cron Triggers > Add**: `*/5 * * * *`.
+6. After the test checklist passes, change `DRY_RUN` to `false`.
+
+To stop it, delete the cron trigger or the Worker. The GitHub schedule keeps running on its own.
+
+**Test checklist:**
+- [ ] Open the Worker URL. It shows `Mode: DRY RUN` and `Token set: yes`.
+- [ ] Wait for the next 5-minute mark. **Worker > Logs** shows `DRY RUN: would start "Down Detector" ... Token OK.`
+- [ ] GitHub Actions tab shows no new run from the Worker.
+- [ ] Set `DRY_RUN` = `false`. Worker URL now shows `Mode: LIVE`.
+- [ ] Next 5-minute mark: Worker log shows `Started monitor.yml on main`, and a new **workflow_dispatch** run appears in Actions.
+- [ ] Over the next hour, Actions shows roughly 12 runs, about 5 minutes apart.
+- [ ] Break test: change the token secret to `bad`. The next cron shows an error with `HTTP 401` in Worker logs. Put the real token back.
+
 ### 5. Status page (optional)
 
 1. **Settings > Pages > Build and deployment > Source: GitHub Actions**.
