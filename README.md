@@ -25,8 +25,8 @@ It ships in **dry-run mode**. It checks everything and shows what it would send,
 | Send a test alert | Actions > Down Detector > Run workflow > tick "Send a TEST message" |
 | Check a new feed's format | Actions > Down Detector > Run workflow > tick "Print raw responses" |
 | See the last run | Actions > Down Detector > latest run > Summary |
-| Status page | https://svisnesky.github.io/down-detector/ |
-| Wall screen view | https://svisnesky.github.io/down-detector/?view=tv |
+| Status page | https://tfi-it-reg.github.io/down-detector/ |
+| Wall screen view | https://tfi-it-reg.github.io/down-detector/?view=tv |
 | Run tests locally | `npm test` |
 
 Levels: **Down** (high-priority push), **Degraded**, **Can't check** (status source unreadable 3 runs in a row), **Maintenance** (silent by default), **Recovered** (quiet push).
