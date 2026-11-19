@@ -1,6 +1,6 @@
 {
   "name": "down-detector",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "private": true,
   "type": "module",
   "description": "Watches the services we depend on and alerts Teams and phone push at the first sign of trouble.",

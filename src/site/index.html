@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Down Detector status page v1.3.0: Night Ops view plus Serious view -->
+<!-- Down Detector status page v1.3.1: Night Ops view plus Serious view -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -86,7 +86,8 @@ body.ops { background: #0B0F1A; color: #DCE4F5; }
 .log-row div { flex: 1 1 360px; color: #C9D4EA; overflow-wrap: anywhere; }
 .log-empty { color: #8FA3C7; font-size: 14px; padding: 6px 0; }
 .ops-foot { font-size: 12px; color: #8FA3C7; }
-.floor { flex: 1; margin-top: 28px; position: relative; min-height: 290px; background: #141A2E; border-top: 6px solid #2B3352; overflow: hidden; }
+.floor { margin-top: 18px; position: relative; height: 290px; background: #141A2E; border-top: 6px solid #2B3352; border-bottom: 6px solid #2B3352; overflow: hidden; flex: none; }
+.ops-lower { padding-bottom: 32px; }
 .floor-band { position: absolute; left: 0; right: 0; bottom: 0; height: 44px; background: #1B2340; border-top: 2px solid #232B47; }
 .desk-line { position: absolute; left: 24px; top: 14px; font-size: 22px; color: #8FA3C7; }
 .mouse { position: absolute; bottom: 12px; animation: mouse 14s linear infinite; }
@@ -242,16 +243,6 @@ body.serious { background: #F2F4F7; color: #101828; }
           <div class="lines"></div>
         </div>
       </section>
-
-      <section class="stats" id="ops-stats"></section>
-      <section class="cams" id="ops-cams"></section>
-
-      <section class="log">
-        <h2 class="vt">RECENT ALERTS</h2>
-        <div id="ops-log"></div>
-      </section>
-
-      <div class="ops-foot js-foot"></div>
     </div>
   </div>
 
@@ -281,6 +272,21 @@ body.serious { background: #F2F4F7; color: #101828; }
       <div class="bubble" id="bubble" hidden></div>
     </div>
   </div>
+
+  <div class="ops-main ops-lower">
+    <div class="wrap">
+      <section class="stats" id="ops-stats"></section>
+      <section class="cams" id="ops-cams"></section>
+
+      <section class="log">
+        <h2 class="vt">RECENT ALERTS</h2>
+        <div id="ops-log"></div>
+      </section>
+
+      <div class="ops-foot js-foot"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ================= SERIOUS VIEW ================= -->
@@ -348,7 +354,7 @@ body.serious { background: #F2F4F7; color: #101828; }
 </div>
 
 <script>
-// Down Detector status page v1.3.0
+// Down Detector status page v1.3.1
 const RANK = { ok: 0, skipped: 0, maintenance: 1, unknown: 2, degraded: 3, down: 4 };
 const CODE_LEVEL = { o: 'ok', m: 'maintenance', u: 'unknown', d: 'degraded', x: 'down', s: 'skipped' };
 const CODE_RANK = { s: -1, o: 0, m: 1, u: 2, d: 3, x: 4 };
