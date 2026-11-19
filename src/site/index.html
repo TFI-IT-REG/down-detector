@@ -1,184 +1,384 @@
 <!doctype html>
-<!-- Down Detector status page v1.2.0 -->
+<!-- Down Detector status page v1.3.0: Night Ops view plus Serious view -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Service Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&display=swap">
 <style>
-:root {
-  --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #5d6673; --border: #dde1e6; --grid: #eceff2;
-  --ok: #1f8a4c; --ok-bg: #e6f4ec; --warn: #a15c00; --warn-bg: #fdf1df;
-  --down: #c4302b; --down-bg: #fbe7e6; --info: #2f5fb3; --info-bg: #e7eefa;
-  --gray: #6b7280; --gray-bg: #eef0f3; --tip-bg: #1b1f24; --tip-text: #fff;
-  --bar-ok: #2fa463; --bar-warn: #e09422; --bar-down: #d93a33; --bar-info: #4a7bd0; --bar-none: #e3e6ea;
-  --line: #2f5fb3;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #9aa3ad; --border: #2c323a; --grid: #262b32;
-    --ok: #4cc27f; --ok-bg: #16301f; --warn: #e5a54a; --warn-bg: #33270f;
-    --down: #ff6b63; --down-bg: #3a1716; --info: #7ea6ef; --info-bg: #172440;
-    --gray: #9aa3ad; --gray-bg: #23282f; --tip-bg: #e6e8eb; --tip-text: #111418;
-    --bar-ok: #3bb873; --bar-warn: #e5a54a; --bar-down: #f0605a; --bar-info: #6f98e6; --bar-none: #2a3038;
-    --line: #7ea6ef;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #9aa3ad; --border: #2c323a; --grid: #262b32;
-  --ok: #4cc27f; --ok-bg: #16301f; --warn: #e5a54a; --warn-bg: #33270f;
-  --down: #ff6b63; --down-bg: #3a1716; --info: #7ea6ef; --info-bg: #172440;
-  --gray: #9aa3ad; --gray-bg: #23282f; --tip-bg: #e6e8eb; --tip-text: #111418;
-  --bar-ok: #3bb873; --bar-warn: #e5a54a; --bar-down: #f0605a; --bar-info: #6f98e6; --bar-none: #2a3038;
-  --line: #7ea6ef;
-}
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-main { max-width: 1000px; margin: 0 auto; padding: 20px 16px 48px; }
-header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-h1 { font-size: 20px; margin: 0; }
-h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 24px 0 8px; }
-.toolbar { display: flex; gap: 6px; flex-wrap: wrap; }
-button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; position: relative; }
-button[aria-pressed="true"] { background: var(--info-bg); border-color: var(--info); color: var(--info); }
+html, body { margin: 0; }
+body { font: 15px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.vt { font-family: VT323, ui-monospace, Menlo, Consolas, monospace; }
+[hidden] { display: none !important; }
+button, .btn { font: 500 14px Inter, system-ui, sans-serif; min-height: 44px; padding: 0 14px; border-radius: 8px; cursor: pointer; position: relative; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 [data-tip]:hover::after, [data-tip]:focus-visible::after {
-  content: attr(data-tip); position: absolute; right: 0; top: calc(100% + 6px); z-index: 20;
-  background: var(--tip-bg); color: var(--tip-text); font-size: 12px; font-weight: 400; padding: 5px 8px; border-radius: 4px;
-  width: max-content; max-width: 240px; pointer-events: none; text-transform: none; letter-spacing: 0;
+  content: attr(data-tip); position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: max-content; max-width: 240px;
+  font: 500 12px Inter, system-ui, sans-serif; padding: 6px 8px; border-radius: 6px; pointer-events: none; text-align: left; white-space: normal;
 }
-#tt { position: fixed; z-index: 30; pointer-events: none; background: var(--tip-bg); color: var(--tip-text); font-size: 12px; padding: 5px 8px; border-radius: 4px; max-width: 260px; display: none; white-space: pre-line; }
-.banner { padding: 14px 16px; border-radius: 8px; font-weight: 600; border: 1px solid var(--border); }
-.banner small { display: block; font-weight: 400; color: var(--muted); margin-top: 2px; }
-.lvl-ok { background: var(--ok-bg); color: var(--ok); }
-.lvl-degraded, .lvl-unknown { background: var(--warn-bg); color: var(--warn); }
-.lvl-down { background: var(--down-bg); color: var(--down); }
-.lvl-maintenance { background: var(--info-bg); color: var(--info); }
-.lvl-skipped { background: var(--gray-bg); color: var(--gray); }
-.stale { margin-top: 8px; padding: 10px 14px; border-radius: 8px; background: var(--warn-bg); color: var(--warn); }
-.grid { display: grid; gap: 8px; }
-.svc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
-.svc > * { min-width: 0; }
-.svc .name { font-weight: 600; overflow-wrap: anywhere; }
-.svc .name a { color: inherit; }
-.pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; align-self: start; white-space: nowrap; position: relative; }
-.pill::before { content: attr(data-icon); margin-right: 4px; }
-.svc .detail { grid-column: 1 / -1; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
-.svc ul { grid-column: 1 / -1; margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
-.svc ul a { color: var(--info); }
-.meta { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
-.viz { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 6px; }
-.bars { display: flex; gap: 2px; height: 22px; align-items: stretch; }
-.bars span { flex: 1; border-radius: 2px; background: var(--bar-none); min-width: 2px; }
-.bars span:hover { outline: 2px solid var(--text); outline-offset: 1px; }
-.b-o, .b-m.only-maint { background: var(--bar-ok) !important; }
-.b-d { background: var(--bar-warn) !important; }
-.b-u { background: repeating-linear-gradient(135deg, var(--bar-none) 0 3px, var(--bar-warn) 3px 5px) !important; }
-.b-x { background: var(--bar-down) !important; }
-.b-m { background: var(--bar-info) !important; }
-.b-s { background: var(--bar-none) !important; }
-.axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
-.axis b { font-weight: 600; color: var(--text); }
-.spark { position: relative; }
-.spark svg { display: block; width: 100%; height: 44px; overflow: visible; }
-.spark .stats { font-size: 11px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
-.spark .stats b { color: var(--text); font-weight: 600; }
-.hist { background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
-.hist div { padding: 8px 12px; border-top: 1px solid var(--border); font-size: 13px; overflow-wrap: anywhere; }
-.hist div:first-child { border-top: 0; }
-.hist time { color: var(--muted); margin-right: 8px; }
-.help { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 4px 16px; margin-bottom: 16px; }
-.help h3 { font-size: 15px; margin: 12px 0 4px; }
-.help p, .help li { font-size: 14px; color: var(--muted); }
-.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); margin: 10px 0 0; }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
-.empty { color: var(--muted); font-size: 13px; padding: 8px 12px; }
-footer { margin-top: 32px; font-size: 12px; color: var(--muted); }
+.wrap { max-width: 1200px; margin: 0 auto; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Tile view */
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-.tile { border-radius: 10px; padding: 14px; border: 1px solid var(--border); position: relative; min-height: 104px; display: flex; flex-direction: column; justify-content: space-between; }
-.tile .t-name { font-weight: 700; font-size: 16px; color: var(--text); overflow-wrap: anywhere; }
-.tile .t-lvl { font-size: 20px; font-weight: 700; margin-top: 6px; }
-.tile .t-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.tile.lvl-ok { border-color: transparent; }
-body.tv main { max-width: none; padding: 20px 24px; }
-body.tv .tiles { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-body.tv .tile { min-height: 150px; padding: 20px; }
-body.tv .tile .t-name { font-size: 22px; }
-body.tv .tile .t-lvl { font-size: 30px; }
-body.tv .tile .t-sub { font-size: 15px; }
-body.tv .banner { font-size: 22px; }
-body.tv #hist-section, body.tv #help { display: none; }
-@media (max-width: 520px) { .tiles { grid-template-columns: 1fr 1fr; } .tile { min-height: 92px; padding: 10px; } .tile .t-lvl { font-size: 16px; } }
+/* ================= NIGHT OPS ================= */
+body.ops { background: #0B0F1A; color: #DCE4F5; }
+.ops button, .ops .btn { border: 2px solid #2B3352; background: #141A2E; color: #DCE4F5; }
+.ops button:hover, .ops .btn:hover { border-color: #7CF29A; }
+.ops button[aria-pressed="true"] { border-color: #7CF29A; color: #7CF29A; }
+.ops [data-tip]:hover::after, .ops [data-tip]:focus-visible::after { background: #7CF29A; color: #07140D; }
+.ops a { color: #7CF29A; }
+#ops { min-height: 100vh; display: flex; flex-direction: column; }
+.ops-top { padding: 28px 16px 0; }
+.ops-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.ops-brand { display: flex; align-items: center; gap: 14px; }
+.ops-kicker { font-size: 18px; letter-spacing: .12em; color: #8FA3C7; }
+.ops h1 { margin: 0; font-size: 52px; line-height: .9; font-weight: 400; color: #7CF29A; letter-spacing: .04em; }
+.ops-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ops-live { display: flex; align-items: center; gap: 8px; font-size: 22px; color: #8FA3C7; padding: 0 8px; }
+.ops-live i { width: 10px; height: 10px; border-radius: 50%; background: #3FB950; animation: pulse 2s ease-in-out infinite; }
+.ticker { margin-top: 20px; overflow: hidden; border-top: 2px solid #2B3352; border-bottom: 2px solid #2B3352; }
+.ticker-run { display: flex; width: max-content; animation: ticker 28s linear infinite; }
+.ticker-run span { font-size: 26px; padding: 6px 0; white-space: pre; }
+.ops-main { padding: 24px 16px 0; }
+.ops-main > .wrap { display: flex; flex-direction: column; gap: 18px; }
+.ops-help { background: #141A2E; border: 2px solid #2B3352; border-radius: 12px; padding: 6px 20px 14px; }
+.ops-help h2 { font-size: 26px; font-weight: 400; color: #7CF29A; margin: 8px 0 4px; }
+.ops-help li, .ops-help p { color: #B7C3DD; font-size: 14px; }
+.stale { border-radius: 10px; padding: 12px 16px; font-weight: 600; }
+.ops .stale { background: #2E2206; color: #FFC857; border: 2px solid #FFC857; }
+.bezel { background: #2B3352; border-radius: 12px; padding: 10px; }
+.screen { position: relative; overflow: hidden; border-radius: 6px; }
+.scanbar { position: absolute; left: 0; right: 0; height: 30%; background: rgba(124,242,154,.05); animation: scan 5s linear infinite; pointer-events: none; }
+.lines { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px); pointer-events: none; }
+.static { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,255,255,.09) 0 2px, rgba(0,0,0,.25) 2px 5px, rgba(255,255,255,.05) 5px 7px); animation: static .25s steps(4) infinite; pointer-events: none; }
+.shake { animation: shake .3s linear infinite; }
+.banner-screen { padding: 22px 26px; display: flex; flex-wrap: wrap; align-items: center; gap: 22px; animation: flicker 6s infinite; }
+.banner-icon { position: relative; width: 64px; height: 64px; border-radius: 10px; border: 3px solid currentColor; display: flex; align-items: center; justify-content: center; flex: none; }
+.banner-text { position: relative; flex: 1 1 380px; min-width: 0; }
+.banner-head { font-size: 48px; line-height: 1; }
+.banner-sub { margin-top: 8px; font-size: 15px; color: #C9D4EA; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.stat .screen { background: #07140D; padding: 8px 14px 4px; }
+.stat .num { font-size: 46px; line-height: 1; }
+.stat .lbl { padding: 8px 4px 0; font-size: 13px; color: #B7C3DD; }
+.cams { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+.cam { display: block; text-decoration: none; color: inherit; }
+.cam .screen { height: 196px; }
+.cam-top { position: absolute; left: 12px; right: 12px; top: 6px; display: flex; justify-content: space-between; font-size: 20px; }
+.rec { display: flex; align-items: center; gap: 6px; }
+.rec i { width: 9px; height: 9px; border-radius: 50%; background: #FF5A4E; animation: rec 1.2s steps(1) infinite; }
+.cam-name { position: absolute; left: 12px; right: 12px; top: 34px; font-size: 28px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cam-read { position: absolute; left: 12px; right: 12px; top: 64px; font-size: 44px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cam-state { position: absolute; left: 12px; right: 12px; top: 110px; font-size: 22px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cam-bars { position: absolute; left: 12px; right: 12px; bottom: 10px; }
+.cam-bars .bars { display: flex; gap: 2px; height: 22px; align-items: flex-end; }
+.cam-bars .bars span { flex: 1; opacity: .85; }
+.cam-bars .axis { display: flex; justify-content: space-between; font-size: 16px; margin-top: 2px; opacity: .85; }
+.cam-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 4px 0; font-size: 13px; color: #B7C3DD; }
+.cam-foot .led { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.cam-sum { padding: 2px 4px 0; font-size: 12px; color: #8FA3C7; overflow-wrap: anywhere; }
+.log { background: #141A2E; border: 2px solid #2B3352; border-radius: 12px; padding: 10px 16px; }
+.log h2 { font-size: 26px; font-weight: 400; color: #7CF29A; margin: 2px 0 6px; }
+.log-row { display: flex; flex-wrap: wrap; gap: 2px 14px; padding: 8px 0; border-top: 1px solid #232B47; font-size: 14px; }
+.log-row time { font-family: VT323, monospace; font-size: 20px; color: #8FA3C7; flex: 0 0 110px; }
+.log-row div { flex: 1 1 360px; color: #C9D4EA; overflow-wrap: anywhere; }
+.log-empty { color: #8FA3C7; font-size: 14px; padding: 6px 0; }
+.ops-foot { font-size: 12px; color: #8FA3C7; }
+.floor { flex: 1; margin-top: 28px; position: relative; min-height: 290px; background: #141A2E; border-top: 6px solid #2B3352; overflow: hidden; }
+.floor-band { position: absolute; left: 0; right: 0; bottom: 0; height: 44px; background: #1B2340; border-top: 2px solid #232B47; }
+.desk-line { position: absolute; left: 24px; top: 14px; font-size: 22px; color: #8FA3C7; }
+.mouse { position: absolute; bottom: 12px; animation: mouse 14s linear infinite; }
+.walker { position: absolute; bottom: 20px; width: 158px; animation: walk 26s linear infinite; }
+.walker .flip { animation: flip 26s linear infinite; }
+.glide { position: relative; animation: glide 1.2s ease-in-out infinite; }
+.scooter { width: 158px; height: 200px; background: url(scooter.webp) 0% 0 / 400% 100% no-repeat; }
+.ride-calm { animation: ride-calm 7s step-end infinite; }
+.ride-alert { animation: ride-alert 2.4s step-end infinite; }
+.beam { position: absolute; left: 148px; top: 46px; width: 170px; height: 84px; pointer-events: none; mix-blend-mode: screen; opacity: 0;
+  background: linear-gradient(90deg, rgba(255,226,120,.75), rgba(255,226,120,.28) 55%, rgba(255,226,120,0)); clip-path: polygon(0% 41%, 100% 0%, 100% 100%, 0% 59%); }
+.beam-on { animation: beam 7s step-end infinite; }
+.desk { position: absolute; right: 3%; bottom: 20px; width: 400px; height: 220px; }
+.deskguy { position: absolute; left: 170px; bottom: 0; width: 212px; height: 200px; background: url(desk.webp) 0% 0 / 400% 100% no-repeat; }
+.desk-panic { background-position: 66.667% 0; }
+.desk-on { background-position: 100% 0; }
+.glow, .face { position: absolute; pointer-events: none; mix-blend-mode: screen; animation: swipe 4.2s linear infinite; }
+.glow { left: 302px; top: 56px; width: 54px; height: 48px; background: linear-gradient(90deg, rgba(191,216,255,.95), rgba(191,216,255,.15)); clip-path: polygon(0% 42%, 100% 0%, 100% 100%, 0% 72%); }
+.face { left: 318px; top: 46px; width: 58px; height: 54px; border-radius: 50%; background: radial-gradient(closest-side, rgba(191,216,255,.55), rgba(191,216,255,0)); }
+.bubble { position: absolute; right: 236px; top: 34px; background: #FFFFFF; color: #141A2E; border-radius: 12px; padding: 4px 12px; font: 600 15px Inter, sans-serif; white-space: nowrap; }
+.steam { animation: steam 2.5s ease-out infinite; }
+body.tv .ops-top .wrap, body.tv .ops-main .wrap { max-width: none; }
+body.tv .ops-tools button, body.tv .ops-tools .btn, body.tv .log, body.tv .ops-help { display: none; }
+@media (max-width: 760px) {
+  .ops h1 { font-size: 40px; }
+  .banner-head { font-size: 34px; }
+  .walker { display: none; }
+  .desk { right: 0; transform: scale(.8); transform-origin: right bottom; }
+}
+
+/* ================= SERIOUS ================= */
+body.serious { background: #F2F4F7; color: #101828; }
+.serious button, .serious .btn { border: 1px solid #D0D5DD; background: #FFFFFF; color: #101828; }
+.serious button:hover, .serious .btn:hover { border-color: #98A2B3; }
+.serious button[aria-pressed="true"] { background: #101828; color: #FFFFFF; border-color: #101828; }
+.serious [data-tip]:hover::after, .serious [data-tip]:focus-visible::after { background: #101828; color: #FFFFFF; }
+.serious a { color: #1D4ED8; }
+#serious { padding: 32px 16px 48px; }
+#serious .wrap { display: flex; flex-direction: column; gap: 18px; }
+.s-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.s-kicker { font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #475467; }
+.serious h1 { margin: 4px 0 0; font-size: 32px; font-weight: 700; letter-spacing: -.01em; }
+.s-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.panel { background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 18px 20px; }
+.serious .stale { background: #FEF4E2; color: #8A4B00; border: 1px solid #F2B544; }
+.s-banner { display: flex; align-items: center; gap: 14px; font-size: 20px; font-weight: 700; }
+.s-banner small { display: block; font-size: 14px; font-weight: 400; color: #475467; }
+.s-dot { width: 16px; height: 16px; border-radius: 50%; flex: none; }
+.counters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+.counter .lbl { font-size: 14px; color: #475467; }
+.counter .num { font-size: 38px; font-weight: 700; line-height: 1.1; }
+.grid-scroll { overflow-x: auto; }
+.grid-inner { min-width: 900px; }
+.g-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid #F2F4F7; }
+.g-head { font-size: 12px; color: #475467; border-bottom: 1px solid #E4E7EC; align-items: flex-end; }
+.g-name { flex: 0 0 230px; min-width: 0; }
+.g-name b { display: block; font-size: 15px; font-weight: 600; }
+.g-name a { color: inherit; }
+.g-name span { font-size: 12px; color: #475467; }
+.g-cells { flex: 1; display: flex; gap: 3px; height: 28px; }
+.g-cells span { flex: 1; border-radius: 3px; }
+.g-hours { flex: 1; display: flex; gap: 3px; }
+.g-hours span { flex: 1; white-space: nowrap; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.g-now { flex: 0 0 160px; text-align: right; }
+.g-now b { display: block; font-size: 14px; }
+.g-now span { font-size: 12px; color: #475467; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.legend { display: flex; flex-wrap: wrap; gap: 18px; padding-top: 14px; font-size: 13px; color: #475467; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.s-events h2, .s-help h2 { margin: 0 0 10px; font-size: 18px; }
+.s-ev { display: flex; flex-wrap: wrap; gap: 4px 20px; padding: 10px 0; border-top: 1px solid #F2F4F7; font-size: 15px; }
+.s-ev time { flex: 0 0 130px; font-size: 13px; color: #475467; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.s-ev div { flex: 1 1 380px; overflow-wrap: anywhere; }
+.s-help li, .s-help p { color: #475467; font-size: 14px; }
+.s-foot { font-size: 12px; color: #475467; }
+
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+@keyframes scan { 0% { top: -30% } 100% { top: 110% } }
+@keyframes rec { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
+@keyframes static { 0% { background-position: 0 0 } 100% { background-position: 0 40px } }
+@keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-2px) } 75% { transform: translateX(2px) } }
+@keyframes ticker { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
+@keyframes flicker { 0%,92%,94%,100% { opacity: 1 } 93% { opacity: .85 } }
+@keyframes walk { 0% { left: 2% } 50% { left: calc(62% - 158px) } 100% { left: 2% } }
+@keyframes flip { 0%,49.9% { transform: scaleX(1) } 50%,100% { transform: scaleX(-1) } }
+@keyframes glide { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-2px) } }
+@keyframes ride-calm { 0% { background-position: 0% 0 } 45% { background-position: 66.667% 0 } 60% { background-position: 0% 0 } 100% { background-position: 0% 0 } }
+@keyframes ride-alert { 0% { background-position: 100% 0 } 70% { background-position: 0% 0 } }
+@keyframes beam { 0% { opacity: 0 } 45% { opacity: 1 } 60% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes swipe { 0%,100% { opacity: .35 } 6% { opacity: .8 } 10% { opacity: .3 } 34% { opacity: .4 } 38% { opacity: .85 } 43% { opacity: .32 } 62% { opacity: .38 } 64% { opacity: .7 } 66% { opacity: .4 } 70% { opacity: .9 } 76% { opacity: .34 } }
+@keyframes mouse { 0%,70% { left: -40px } 100% { left: 105% } }
+@keyframes steam { 0% { opacity: 0; transform: translateY(0) } 40% { opacity: .7 } 100% { opacity: 0; transform: translateY(-16px) } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; }
+  .walker { left: 30%; }
+}
 </style>
 </head>
-<body>
-<main>
-  <header>
-    <h1>Service Status</h1>
-    <div class="toolbar">
-      <button id="btn-view" aria-pressed="false" data-tip="Switch between the detailed list and big colored tiles for a wall screen" aria-label="Tile view">Tile view</button>
-      <button id="btn-problems" aria-pressed="false" data-tip="Hide services that are working normally" aria-label="Show problems only">Problems only</button>
-      <button id="btn-auto" aria-pressed="true" data-tip="Reload the data every 60 seconds while this tab is open" aria-label="Auto refresh">Auto refresh</button>
-      <button id="btn-refresh" data-tip="Reload the latest results now" aria-label="Refresh now">Refresh</button>
-      <button id="btn-theme" data-tip="Switch between light, dark and system theme" aria-label="Theme">Theme</button>
-      <button id="btn-help" aria-expanded="false" data-tip="How this page works" aria-label="How it works">?</button>
+<body class="ops">
+
+<!-- ================= NIGHT OPS VIEW ================= -->
+<div id="ops">
+  <div class="ops-top">
+    <div class="wrap ops-head">
+      <div class="ops-brand">
+        <svg width="44" height="44" viewBox="0 0 36 36" aria-hidden="true"><rect x="1" y="1" width="34" height="34" rx="9" fill="#07140D" stroke="#7CF29A" stroke-width="2"/><path d="M7 19h5l3-7 5 13 3-6h6" fill="none" stroke="#7CF29A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <div class="ops-kicker vt">DOWN DETECTOR</div>
+          <h1 class="vt">NIGHT OPS</h1>
+        </div>
+      </div>
+      <div class="ops-tools">
+        <span class="ops-live vt"><i></i><span id="ops-next">LIVE</span></span>
+        <button type="button" class="js-view" data-tip="Switch to the plain, no-cartoons view">Serious view</button>
+        <button type="button" class="js-problems" aria-pressed="false" data-tip="Only show services with a problem">Trouble only</button>
+        <button type="button" class="js-refresh" data-tip="Reload the latest results now">Refresh</button>
+        <button type="button" class="js-help" aria-expanded="false" aria-label="How this page works" data-tip="How this page works">?</button>
+      </div>
     </div>
-  </header>
+  </div>
 
-  <section id="help" class="help" hidden>
-    <h3>How it works</h3>
-    <p>A scheduled GitHub Actions job checks every service about every 5 minutes. GitHub can delay scheduled runs, so gaps of 10 to 15 minutes are normal.</p>
-    <ul>
-      <li><b>Vendor status</b> checks read the vendor's official status feed. Accurate, but vendors often post late.</li>
-      <li><b>Direct probes</b> load a real login page or API from GitHub's servers. These usually catch problems first. A probe only counts as failed if it fails twice, 15 seconds apart.</li>
-      <li><b>History bar</b>: each block is 30 minutes, oldest on the left. Its color is the worst result in that window. Gray means no check ran. Hover a block for details. The percentage is the share of checks that were working.</li>
-      <li><b>Response time</b> (direct probes only): how long the page took to load over the last 24 hours. The scale starts at 1 second, so a flat line near the bottom is healthy. The dashed line is the slow limit when it's in range. Gaps are failed checks. Hover for exact times.</li>
-      <li><b>Tile view</b> is for a wall screen. Add <code>?view=tv</code> to the address for a full-width version with bigger text.</li>
-      <li><b>Alerts</b> go to Teams and phone push only when something changes: a new problem, a worse problem, a new incident, or recovery.</li>
-      <li><b>Can't check</b> means the status source itself could not be read 3 runs in a row. <b>Not configured</b> means the check needs credentials first.</li>
-    </ul>
-    <div class="legend">
-      <span><i style="background:var(--bar-ok)"></i>Operational</span>
-      <span><i style="background:var(--bar-warn)"></i>Degraded</span>
-      <span><i style="background:repeating-linear-gradient(135deg, var(--bar-none) 0 3px, var(--bar-warn) 3px 5px)"></i>Monitor couldn't check</span>
-      <span><i style="background:var(--bar-down)"></i>Down</span>
-      <span><i style="background:var(--bar-info)"></i>Maintenance</span>
-      <span><i style="background:var(--bar-none)"></i>No data</span>
+  <div class="ticker" id="ops-ticker">
+    <p class="sr" id="ops-ticker-sr"></p>
+    <div class="ticker-run vt" aria-hidden="true"><span id="tick-a"></span><span id="tick-b"></span></div>
+  </div>
+
+  <div class="ops-main">
+    <div class="wrap">
+      <section class="ops-help js-helpbox" hidden>
+        <h2 class="vt">HOW IT WORKS</h2>
+        <ul>
+          <li>Every service is checked every 5 minutes. A Cloudflare timer starts each run; GitHub's own schedule is a slower backup.</li>
+          <li><b>Vendor status</b> monitors read the vendor's official status feed. Accurate, but vendors often post 15 to 45 minutes late.</li>
+          <li><b>Direct probes</b> load a real login page or API and time it. These usually catch a problem first. A probe only counts as failed if it fails twice, 15 seconds apart.</li>
+          <li>The bars on each monitor are the last 24 hours, one per hour, oldest on the left. Hover a bar for details. Click a monitor to open that vendor's status page.</li>
+          <li>Alerts go to phone push only when something changes: a new problem, a worse problem, or a recovery.</li>
+          <li><b>Can't check</b> means the status source couldn't be read 3 runs in a row. <b>Not set up</b> means the check still needs credentials.</li>
+          <li>The guards are decoration. The data on the monitors is real.</li>
+        </ul>
+        <p>Prefer no cartoons? Use <b>Serious view</b>. It remembers your choice. For a wall screen, add <code>?view=tv</code> to the address.</p>
+      </section>
+
+      <div class="stale js-stale" hidden></div>
+
+      <section class="bezel" id="ops-banner-bezel">
+        <div class="screen banner-screen" id="ops-banner">
+          <div class="static" id="ops-banner-static" hidden></div>
+          <div class="scanbar"></div>
+          <div class="banner-icon" id="ops-banner-icon" aria-hidden="true"></div>
+          <div class="banner-text">
+            <div class="banner-head vt" id="ops-headline">LOADING...</div>
+            <div class="banner-sub" id="ops-sub"></div>
+          </div>
+          <div class="lines"></div>
+        </div>
+      </section>
+
+      <section class="stats" id="ops-stats"></section>
+      <section class="cams" id="ops-cams"></section>
+
+      <section class="log">
+        <h2 class="vt">RECENT ALERTS</h2>
+        <div id="ops-log"></div>
+      </section>
+
+      <div class="ops-foot js-foot"></div>
     </div>
-    <p>A direct probe failing from GitHub's servers doesn't always mean it's down for us. Check the vendor link before escalating.</p>
-  </section>
+  </div>
 
-  <div id="banner" class="banner lvl-skipped">Loading...</div>
-  <div id="stale" class="stale" hidden></div>
-  <div id="groups"></div>
+  <div class="floor" aria-hidden="true">
+    <div class="floor-band"></div>
+    <div class="desk-line vt" id="desk-line"></div>
+    <div class="mouse"><svg width="34" height="18" viewBox="0 0 34 18"><ellipse cx="16" cy="11" rx="11" ry="6" fill="#8A93A8"/><circle cx="26" cy="9" r="4.5" fill="#8A93A8"/><circle cx="25" cy="5" r="2.5" fill="#B9C0CF"/><circle cx="29" cy="8" r="1" fill="#141A2E"/><path d="M5 11q-6 0-5 6" fill="none" stroke="#8A93A8" stroke-width="1.5"/></svg></div>
+    <div class="walker" id="walker"><div class="flip" id="walker-flip"><div class="glide"><div class="scooter ride-calm" id="scooter"></div><div class="beam beam-on" id="beam"></div></div></div></div>
+    <div class="desk">
+      <svg width="230" height="130" viewBox="0 0 230 130" style="position:absolute;left:0;bottom:0">
+        <rect x="6" y="70" width="218" height="12" rx="3" fill="#6B4A35" stroke="#0D1222" stroke-width="2"/>
+        <rect x="18" y="82" width="12" height="48" fill="#5A3D2B"/>
+        <rect x="200" y="82" width="12" height="48" fill="#5A3D2B"/>
+        <rect x="40" y="16" width="78" height="52" rx="5" fill="#2B3352" stroke="#0D1222" stroke-width="2"/>
+        <rect id="mon-screen" x="47" y="23" width="64" height="38" rx="2" fill="#07140D"/>
+        <path id="mon-line" d="M52 44h10l5-10 7 18 5-9h27" fill="none" stroke="#7CF29A" stroke-width="2"/>
+        <rect x="72" y="68" width="14" height="4" fill="#2B3352"/>
+        <rect x="132" y="50" width="17" height="20" rx="3" fill="#E8E2D4" stroke="#0D1222" stroke-width="1.5"/>
+        <path d="M149 54q8 0 8 6t-8 6" fill="none" stroke="#E8E2D4" stroke-width="3"/>
+        <path class="steam" d="M138 44q-4-6 0-12" fill="none" stroke="#8FA3C7" stroke-width="2" stroke-linecap="round"/>
+        <path class="steam" style="animation-delay:-1.2s" d="M144 44q4-6 0-12" fill="none" stroke="#8FA3C7" stroke-width="2" stroke-linecap="round"/>
+        <rect x="8" y="58" width="26" height="12" rx="2" fill="#E8E2D4" stroke="#0D1222" stroke-width="1.5"/>
+      </svg>
+      <div class="deskguy" id="deskguy"></div>
+      <div class="glow" id="glow"></div>
+      <div class="face" id="face"></div>
+      <div class="bubble" id="bubble" hidden></div>
+    </div>
+  </div>
+</div>
 
-  <section id="hist-section">
-    <h2>Recent alerts</h2>
-    <div id="history" class="hist"></div>
-  </section>
+<!-- ================= SERIOUS VIEW ================= -->
+<div id="serious" hidden>
+  <div class="wrap">
+    <header class="s-head">
+      <div>
+        <div class="s-kicker">Down Detector</div>
+        <h1>Service Status</h1>
+      </div>
+      <div class="s-tools">
+        <button type="button" class="js-view" data-tip="Switch back to Night Ops, the fun view">Night Ops view</button>
+        <button type="button" class="js-problems" aria-pressed="false" data-tip="Only show services with a problem">Problems only</button>
+        <button type="button" class="js-refresh" data-tip="Reload the latest results now">Refresh</button>
+        <button type="button" class="js-help" aria-expanded="false" aria-label="How this page works" data-tip="How this page works">?</button>
+      </div>
+    </header>
 
-  <footer id="footer"></footer>
-</main>
-<div id="tt" role="tooltip"></div>
+    <section class="panel s-help js-helpbox" hidden>
+      <h2>How it works</h2>
+      <ul>
+        <li>Every service is checked every 5 minutes. A Cloudflare timer starts each run; GitHub's own schedule is a slower backup.</li>
+        <li><b>Vendor status</b> checks read the vendor's official status feed. Accurate, but vendors often post 15 to 45 minutes late.</li>
+        <li><b>Direct probes</b> load a real login page or API and time it. These usually catch a problem first. A probe only counts as failed if it fails twice, 15 seconds apart.</li>
+        <li>Each row shows the last 24 hours, one block per hour, oldest on the left. A block's color is the worst result in that hour. Hover a block for details.</li>
+        <li>Alerts go to phone push only when something changes: a new problem, a worse problem, or a recovery.</li>
+        <li><b>Can't check</b> means the status source couldn't be read 3 runs in a row. <b>Not set up</b> means the check still needs credentials.</li>
+      </ul>
+    </section>
+
+    <div class="stale js-stale" hidden></div>
+
+    <section class="panel s-banner" id="s-banner"><span class="s-dot" id="s-dot"></span><div><span id="s-headline">Loading...</span><small id="s-sub"></small></div></section>
+
+    <section class="counters" id="s-counters"></section>
+
+    <section class="panel">
+      <div class="grid-scroll">
+        <div class="grid-inner">
+          <div class="g-row g-head">
+            <div class="g-name" style="font-weight:600;text-transform:uppercase;letter-spacing:.08em">Service</div>
+            <div class="g-hours" id="s-hours"></div>
+            <div class="g-now" style="font-weight:600;text-transform:uppercase;letter-spacing:.08em">Now</div>
+          </div>
+          <div id="s-rows"></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i style="background:#47B27A"></i>Operational</span>
+        <span><i style="background:#F2B544"></i>Degraded</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#E4E7EC 0 3px,#F2B544 3px 5px)"></i>Can't check</span>
+        <span><i style="background:#B42318"></i>Down</span>
+        <span><i style="background:#4A7BD0"></i>Maintenance</span>
+        <span><i style="background:#E4E7EC"></i>No data</span>
+      </div>
+    </section>
+
+    <section class="panel s-events">
+      <h2>What happened</h2>
+      <div id="s-events"></div>
+    </section>
+
+    <div class="s-foot js-foot"></div>
+  </div>
+</div>
+
 <script>
-const LABEL = { ok: 'Operational', degraded: 'Degraded', down: 'Down', maintenance: 'Maintenance', unknown: "Can't check", skipped: 'Not configured' };
-const ICON = { ok: '✓', degraded: '!', down: '✕', maintenance: '⚒', unknown: '?', skipped: '–' };
+// Down Detector status page v1.3.0
 const RANK = { ok: 0, skipped: 0, maintenance: 1, unknown: 2, degraded: 3, down: 4 };
 const CODE_LEVEL = { o: 'ok', m: 'maintenance', u: 'unknown', d: 'degraded', x: 'down', s: 'skipped' };
 const CODE_RANK = { s: -1, o: 0, m: 1, u: 2, d: 3, x: 4 };
-const TIP = {
-  ok: 'Working normally', degraded: 'Partially working, slow, or the vendor reports an issue', down: 'Not working or the vendor reports a major outage',
-  maintenance: 'Vendor maintenance in progress', unknown: 'The status source could not be read', skipped: 'Needs credentials before it can run'
+const LABEL = { ok: 'Operational', degraded: 'Degraded', down: 'Down', maintenance: 'Maintenance', unknown: "Can't check", skipped: 'Not set up' };
+const CRT = { ok: 'ALL QUIET', degraded: 'DEGRADED', down: 'NO SIGNAL', maintenance: 'MAINTENANCE', unknown: "CAN'T CHECK", skipped: 'NOT SET UP' };
+const LOOK = {
+  ok: { screen: '#07140D', fg: '#7CF29A', led: '#3FB950', glow: 'transparent' },
+  degraded: { screen: '#251A05', fg: '#FFC857', led: '#FFC857', glow: '#FFC857' },
+  unknown: { screen: '#1F1A0C', fg: '#E5C07B', led: '#E5C07B', glow: '#8A7440' },
+  down: { screen: '#2A0C0C', fg: '#FF8A80', led: '#FF5A4E', glow: '#FF5A4E' },
+  maintenance: { screen: '#0B1530', fg: '#8FB8FF', led: '#4A7BD0', glow: '#4A7BD0' },
+  skipped: { screen: '#12161F', fg: '#8A93A8', led: '#5B6478', glow: 'transparent' }
 };
-const BUCKETS = 48;
-let data = null, problemsOnly = false, tiles = false, timer = null;
+const CELL = { o: '#47B27A', d: '#F2B544', x: '#B42318', m: '#4A7BD0', u: 'repeating-linear-gradient(135deg,#E4E7EC 0 3px,#F2B544 3px 5px)', none: '#E4E7EC' };
+const TEXT = { ok: '#146C3A', degraded: '#8A4B00', unknown: '#8A4B00', down: '#B42318', maintenance: '#1E4FA8', skipped: '#475467' };
+const ICON = {
+  ok: '<svg width="32" height="32" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  slow: '<svg width="32" height="32" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
+  down: '<svg width="32" height="32" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>'
+};
+const HOURS = 24;
+let data = null, problemsOnly = false, timer = null, tick = null;
 const params = new URLSearchParams(location.search);
 const tv = params.get('view') === 'tv';
 
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function safeUrl(u) { try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:' ? x.href : ''; } catch (e) { return ''; } }
+function $(id) { return document.getElementById(id); }
+function all(sel) { return Array.from(document.querySelectorAll(sel)); }
 function ago(iso) {
   const s = Math.round((Date.now() - Date.parse(iso)) / 1000);
   if (!isFinite(s)) return '';
@@ -187,14 +387,33 @@ function ago(iso) {
   if (s < 129600) return Math.round(s / 3600) + ' h ago';
   return Math.round(s / 86400) + ' d ago';
 }
-function fmt(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString(); }
+function fmt(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+function clock(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
 function hm(sec) { return new Date(sec * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+function ms(v) { return v == null ? '' : v >= 1000 ? (v / 1000).toFixed(1) + ' s' : Math.round(v) + ' ms'; }
+function shortName(n) { return String(n).replace(/\s*\(.*?\)\s*/g, ' ').trim(); }
+function isProbe(s) { return s.type === 'http' || s.type === 'tcp'; }
+function kind(s) { return s.type === 'http' ? 'Direct probe' : s.type === 'tcp' ? 'Port check' : s.type === 'm365graph' ? 'Tenant health' : 'Vendor status'; }
 
 // ---------- data shaping ----------
 function windowOf() {
   const end = Math.floor(Date.parse(data.generatedAt) / 1000);
   const hours = data.historyHours || 24;
-  return { end, start: end - hours * 3600, hours };
+  return { end, start: end - hours * 3600 };
+}
+function hourly(samples) {
+  const { start, end } = windowOf();
+  const span = (end - start) / HOURS;
+  const out = Array.from({ length: HOURS }, (_, i) => ({ from: start + i * span, to: start + (i + 1) * span, worst: null, n: 0, bad: 0, sum: 0, timed: 0 }));
+  for (const [t, c, l] of samples || []) {
+    if (t < start || c === 's') continue;
+    const b = out[Math.min(HOURS - 1, Math.floor((t - start) / span))];
+    b.n++;
+    if (c !== 'o' && c !== 'm') b.bad++;
+    if (l != null) { b.sum += l; b.timed++; }
+    if (b.worst === null || CODE_RANK[c] > CODE_RANK[b.worst]) b.worst = c;
+  }
+  return out;
 }
 function uptime(samples) {
   let good = 0, counted = 0;
@@ -205,77 +424,173 @@ function uptime(samples) {
   }
   return counted ? good / counted : null;
 }
-function pctText(u) {
-  if (u === null) return 'no data';
+function pct(u) {
+  if (u === null) return 'NO DATA';
   const p = u * 100;
-  return (p === 100 ? '100' : p >= 99.95 ? '99.9' : p.toFixed(1)) + '% up';
+  return (p === 100 ? '100' : p >= 99.95 ? '99.9' : p.toFixed(1)) + '%';
 }
-function buckets(samples) {
-  const { start, end } = windowOf();
-  const span = (end - start) / BUCKETS;
-  const out = Array.from({ length: BUCKETS }, (_, i) => ({ from: start + i * span, to: start + (i + 1) * span, worst: null, n: 0, bad: 0 }));
-  for (const [t, c] of samples || []) {
-    if (t < start || c === 's') continue;
-    const b = out[Math.min(BUCKETS - 1, Math.floor((t - start) / span))];
-    b.n++;
-    if (c !== 'o' && c !== 'm') b.bad++;
-    if (b.worst === null || CODE_RANK[c] > CODE_RANK[b.worst]) b.worst = c;
-  }
-  return out;
+function bucketTip(b) {
+  return hm(b.from) + ' to ' + hm(b.to) + ': ' + (b.n ? LABEL[CODE_LEVEL[b.worst]] + ' (' + b.n + ' check' + (b.n > 1 ? 's' : '') + (b.bad ? ', ' + b.bad + ' with issues' : '') + (b.timed ? ', avg ' + ms(b.sum / b.timed) : '') + ')' : 'no data');
 }
-function quantile(sorted, q) {
-  if (!sorted.length) return null;
-  const i = (sorted.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i);
-  return Math.round(sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo));
+function summarize() {
+  const svcs = data.services;
+  const active = svcs.filter(s => s.level !== 'skipped');
+  const trouble = svcs.filter(s => (RANK[s.level] ?? 0) >= 2).sort((a, b) => RANK[b.level] - RANK[a.level]);
+  const worst = trouble[0] || null;
+  const mood = !worst ? 'calm' : worst.level === 'down' ? 'down' : 'slow';
+  const timed = active.filter(s => isProbe(s) && s.latencyMs != null && (s.level === 'ok' || s.level === 'degraded'));
+  const avg = timed.length ? timed.reduce((a, s) => a + s.latencyMs, 0) / timed.length : null;
+  const ups = active.map(s => uptime(s.samples)).filter(u => u !== null);
+  const up = ups.length ? ups.reduce((a, b) => a + b, 0) / ups.length : null;
+  const headline = !worst ? 'All systems operational'
+    : (trouble.length === 1 ? '1 problem: ' : trouble.length + ' problems: ') + worst.name + ' is ' + (worst.level === 'unknown' ? "can't be checked" : LABEL[worst.level].toLowerCase());
+  return { svcs, active, trouble, worst, mood, avg, up, headline };
+}
+function sorted(svcs) {
+  return svcs.slice().sort((a, b) => (RANK[b.level] ?? 0) - (RANK[a.level] ?? 0) || (a.level === 'skipped') - (b.level === 'skipped'));
 }
 
-// ---------- charts ----------
-function barsHtml(s) {
-  const bs = buckets(s.samples);
-  const spans = bs.map(b => {
+// ---------- shared ----------
+function renderShared(sum) {
+  const ageMin = (Date.now() - Date.parse(data.generatedAt)) / 60000;
+  const isStale = ageMin >= Math.max(30, (data.intervalMinutes || 5) * 6);
+  all('.js-stale').forEach(el => {
+    el.hidden = !isStale;
+    el.textContent = 'This data is ' + Math.round(ageMin) + ' minutes old. The monitor may have stopped running. Check the GitHub Actions tab.';
+  });
+  all('.js-foot').forEach(el => { el.textContent = 'Down Detector v' + data.version + ' · ' + sum.svcs.length + ' checks' + (data.live ? '' : ' · alerts in DRY RUN mode'); });
+  document.title = (sum.trouble.length ? '(' + sum.trouble.length + ') ' : '') + 'Service Status';
+}
+function subLine() {
+  return 'Last checked ' + ago(data.generatedAt) + ' (' + clock(data.generatedAt) + '). Checks run every ' + (data.intervalMinutes || 5) + ' minutes, and problems send a phone alert.' + (data.live ? '' : ' Alerts are in DRY RUN mode.');
+}
+
+// ---------- Night Ops ----------
+function renderOps(sum) {
+  const look = LOOK[sum.worst ? sum.worst.level : 'ok'];
+  const bezel = $('ops-banner-bezel');
+  bezel.style.boxShadow = '0 0 0 2px ' + look.glow;
+  $('ops-banner').style.background = look.screen;
+  $('ops-banner').style.color = look.fg;
+  $('ops-banner-static').hidden = sum.mood !== 'down';
+  $('ops-banner-icon').innerHTML = ICON[sum.mood === 'calm' ? 'ok' : sum.mood];
+  $('ops-headline').textContent = sum.headline.toUpperCase();
+  $('ops-sub').textContent = subLine();
+
+  const stats = [
+    { label: 'Services watched', value: String(sum.active.length), color: '#7CF29A' },
+    { label: 'Problems right now', value: String(sum.trouble.length), color: sum.trouble.length ? look.fg : '#7CF29A' },
+    { label: 'Avg response, direct probes', value: sum.avg == null ? '--' : ms(sum.avg).toUpperCase(), color: sum.avg != null && sum.avg >= 2000 ? '#FFC857' : '#7CF29A' },
+    { label: 'Uptime, last 24 hours', value: sum.up == null ? '--' : pct(sum.up), color: '#7CF29A' }
+  ];
+  $('ops-stats').innerHTML = stats.map(k => '<div class="bezel stat"><div class="screen"><div class="num vt" style="color:' + k.color + '">' + esc(k.value) + '</div><div class="lines"></div></div><div class="lbl">' + esc(k.label) + '</div></div>').join('');
+
+  const list = sorted(sum.svcs).filter(s => !problemsOnly || (RANK[s.level] ?? 0) >= 1);
+  $('ops-cams').innerHTML = list.length ? list.map((s, i) => cam(s, i)).join('') : '<p class="log-empty">Nothing to show. Every monitor is quiet.</p>';
+
+  const loopText = !sum.trouble.length
+    ? '   ALL CAMERAS QUIET  ///  GUARD ON PATROL  ///  NEXT SWEEP EVERY ' + (data.intervalMinutes || 5) + ' MIN  ///  NOTHING TO REPORT  ///'
+    : '   ' + sum.trouble.map(s => '!! ' + shortName(s.name).toUpperCase() + ': ' + CRT[s.level] + (s.summary ? ' (' + String(s.summary).toUpperCase() + ')' : '')).join('   ///   ') + '   ///   PHONE ALERT SENT   ///';
+  $('tick-a').textContent = loopText + loopText;
+  $('tick-b').textContent = loopText + loopText;
+  $('ops-ticker').style.background = look.screen;
+  $('ops-ticker').style.color = look.fg;
+  $('ops-ticker-sr').textContent = !sum.trouble.length ? 'All services quiet.' : sum.trouble.map(s => s.name + ': ' + LABEL[s.level]).join('. ');
+
+  const hist = (data.history || []).slice(0, 15);
+  $('ops-log').innerHTML = hist.length ? hist.map(h =>
+    '<div class="log-row"><time title="' + esc(fmt(h.at)) + '">' + esc(ago(h.at).toUpperCase()) + '</time><div><b style="color:' + (LOOK[h.to] || LOOK.ok).fg + '">' +
+    esc(h.to === 'ok' ? 'Recovered' : h.kind === 'updated' ? 'Update' : LABEL[h.to] || h.to) + '</b> ' + esc(h.name) + ': ' + esc(h.summary) + (h.live ? '' : ' <i>(dry run, not sent)</i>') + '</div></div>'
+  ).join('') : '<div class="log-empty">No alerts yet.</div>';
+
+  // characters
+  const scooter = $('scooter'), beam = $('beam');
+  scooter.className = 'scooter ' + (sum.mood === 'calm' ? 'ride-calm' : 'ride-alert');
+  beam.className = 'beam' + (sum.mood === 'calm' ? ' beam-on' : '');
+  const dur = sum.mood === 'calm' ? '26s' : '9s';
+  $('walker').style.animationDuration = dur;
+  $('walker-flip').style.animationDuration = dur;
+  $('deskguy').className = 'deskguy' + (sum.mood === 'down' ? ' desk-panic' : sum.mood === 'slow' ? ' desk-on' : '');
+  $('glow').hidden = $('face').hidden = sum.mood !== 'calm';
+  $('mon-screen').setAttribute('fill', look.screen);
+  $('mon-line').setAttribute('stroke', look.fg);
+  const bubble = $('bubble');
+  bubble.hidden = sum.mood === 'calm';
+  bubble.textContent = sum.mood === 'down' ? 'Wait, ' + sum.worst.name + ' is down?!' : sum.worst ? sum.worst.name + ' is acting up. On it.' : '';
+  $('desk-line').textContent = sum.mood === 'calm' ? 'DESK: DOOM SCROLLING. CAMERAS UNWATCHED.' : 'DESK: OFF THE PHONE AND ON IT';
+}
+
+function cam(s, i) {
+  const look = LOOK[s.level] || LOOK.unknown;
+  const bad = (RANK[s.level] ?? 0) >= 2;
+  const hrs = s.level === 'skipped' ? [] : hourly(s.samples);
+  const maxAvg = Math.max(1000, ...hrs.filter(b => b.timed).map(b => b.sum / b.timed));
+  const bars = hrs.map(b => {
     const lvl = b.worst ? CODE_LEVEL[b.worst] : null;
-    const tip = hm(b.from) + ' – ' + hm(b.to) + '\n' + (b.n ? LABEL[lvl] + ' (' + b.n + ' check' + (b.n > 1 ? 's' : '') + (b.bad ? ', ' + b.bad + ' with issues' : '') + ')' : 'No data');
-    return '<span class="' + (b.worst ? 'b-' + b.worst : '') + '" data-tt="' + esc(tip) + '"></span>';
+    const color = lvl ? (LOOK[lvl] || LOOK.ok).fg : '#2B3352';
+    const h = !b.n ? 20 : b.timed ? 35 + 65 * Math.min(1, (b.sum / b.timed) / maxAvg) : (lvl === 'ok' ? 70 : 100);
+    return '<span title="' + esc(bucketTip(b)) + '" style="height:' + h.toFixed(0) + '%;background:' + color + '"></span>';
   }).join('');
-  const { hours } = windowOf();
-  return '<div class="bars" role="img" aria-label="' + esc(s.name + ' history, last ' + hours + ' hours, ' + pctText(uptime(s.samples))) + '">' + spans + '</div>' +
-    '<div class="axis"><span>' + hours + 'h ago</span><b>' + esc(pctText(uptime(s.samples))) + '</b><span>now</span></div>';
+  const reading = s.level === 'skipped' ? '--' : s.level === 'down' && s.latencyMs == null ? 'NO REPLY'
+    : isProbe(s) && s.latencyMs != null ? ms(s.latencyMs).toUpperCase() : s.level === 'ok' ? 'FEED OK' : CRT[s.level];
+  const link = safeUrl(s.pageUrl);
+  const tag = link ? 'a' : 'div';
+  const href = link ? ' href="' + esc(link) + '" target="_blank" rel="noopener" title="Open ' + esc(s.name) + ' status page"' : '';
+  const n = String(i + 1).padStart(2, '0');
+  return '<' + tag + ' class="cam bezel"' + href + ' style="box-shadow:0 0 0 2px ' + look.glow + '">' +
+    '<div class="screen vt' + (s.level === 'down' ? ' shake' : '') + '" style="background:' + look.screen + ';color:' + look.fg + '">' +
+    (bad ? '<div class="static"></div>' : '') + '<div class="scanbar"></div>' +
+    '<div class="cam-top"><span>CAM ' + n + '</span><span class="rec"><i></i>REC</span></div>' +
+    '<div class="cam-name">' + esc(shortName(s.name).toUpperCase()) + '</div>' +
+    '<div class="cam-read">' + esc(reading) + '</div><div class="cam-state">' + esc(CRT[s.level] || s.level) + '</div>' +
+    (s.level === 'skipped' ? '' : '<div class="cam-bars"><div class="bars">' + bars + '</div><div class="axis"><span>24H</span><span>' + esc(pct(uptime(s.samples))) + ' UP</span></div></div>') +
+    '<div class="lines"></div></div>' +
+    '<div class="cam-foot"><span>' + esc(s.name) + ' · ' + esc(kind(s)) + '</span><span class="led" style="background:' + look.led + '"></span></div>' +
+    (s.level !== 'ok' && s.summary ? '<div class="cam-sum">' + esc(s.summary) + (s.since && s.level !== 'skipped' ? ' · since ' + esc(fmt(s.since)) : '') + '</div>' : '') +
+    '</' + tag + '>';
 }
 
-function sparkHtml(s) {
-  const pts = (s.samples || []).filter(x => x[2] !== null && x[2] !== undefined && (x[1] === 'o' || x[1] === 'd'));
-  if (pts.length < 2) return '';
+// ---------- Serious ----------
+function renderSerious(sum) {
+  const lvl = sum.worst ? sum.worst.level : 'ok';
+  $('s-dot').style.background = lvl === 'ok' ? '#47B27A' : CELL[{ degraded: 'd', down: 'x', unknown: 'd', maintenance: 'm' }[lvl] || 'o'];
+  $('s-headline').textContent = sum.headline;
+  $('s-headline').style.color = TEXT[lvl];
+  $('s-sub').textContent = subLine();
+
+  const count = l => sum.svcs.filter(s => s.level === l).length;
+  const counters = [
+    { label: 'Operational', n: count('ok'), color: TEXT.ok },
+    { label: 'Degraded or can\'t check', n: count('degraded') + count('unknown'), color: TEXT.degraded },
+    { label: 'Down', n: count('down'), color: TEXT.down },
+    { label: 'Maintenance', n: count('maintenance'), color: TEXT.maintenance }
+  ];
+  $('s-counters').innerHTML = counters.map(k => '<div class="panel counter"><div class="lbl">' + esc(k.label) + '</div><div class="num" style="color:' + (k.n ? k.color : '#101828') + '">' + k.n + '</div></div>').join('');
+
   const { start, end } = windowOf();
-  const W = 600, H = 44, PAD = 3;
-  const sorted = pts.map(p => p[2]).sort((a, b) => a - b);
-  const p95 = quantile(sorted, 0.95);
-  const avg = Math.round(sorted.reduce((a, b) => a + b, 0) / sorted.length);
-  // Floor of 1s so normal jitter on a healthy service draws as a calm, near-flat line.
-  const yMax = Math.max(sorted[sorted.length - 1] * 1.1, 1000);
-  const x = t => ((t - start) / (end - start)) * W;
-  const y = ms => H - PAD - (Math.min(ms, yMax) / yMax) * (H - PAD * 2);
-  // Break the line where a check failed (gap of a down/unknown sample between points).
-  const all = (s.samples || []).filter(p => p[0] >= start);
-  let d = '', pen = false;
-  for (const p of all) {
-    const ok = p[2] !== null && p[2] !== undefined && (p[1] === 'o' || p[1] === 'd');
-    if (!ok) { pen = false; continue; }
-    d += (pen ? 'L' : 'M') + x(p[0]).toFixed(1) + ' ' + y(p[2]).toFixed(1);
-    pen = true;
-  }
-  const slow = s.slowMs && s.slowMs <= yMax ? '<line x1="0" x2="' + W + '" y1="' + y(s.slowMs).toFixed(1) + '" y2="' + y(s.slowMs).toFixed(1) + '" stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>' : '';
-  const last = pts[pts.length - 1];
-  return '<div class="spark" data-id="' + esc(s.id) + '">' +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + esc(s.name + ' response time, average ' + avg + ' ms') + '">' +
-    '<line x1="0" x2="' + W + '" y1="' + (H - PAD) + '" y2="' + (H - PAD) + '" stroke="var(--grid)" stroke-width="1" vector-effect="non-scaling-stroke"/>' + slow +
-    '<path d="' + d + '" fill="none" stroke="var(--line)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' +
-    '<line class="xh" x1="0" x2="0" y1="0" y2="' + H + '" stroke="var(--muted)" stroke-width="1" vector-effect="non-scaling-stroke" visibility="hidden"/>' +
-    '</svg>' +
-    '<div class="stats"><span>Response time</span><span>now <b>' + last[2] + ' ms</b></span><span>avg <b>' + avg + ' ms</b></span><span>p95 <b>' + p95 + ' ms</b></span>' +
-    (s.slowMs ? '<span>slow limit ' + s.slowMs + ' ms</span>' : '') + '</div></div>';
+  const span = (end - start) / HOURS;
+  $('s-hours').innerHTML = Array.from({ length: HOURS }, (_, i) => '<span>' + (i === HOURS - 1 ? 'Now' : i % 6 === 0 ? esc(hm(start + i * span)) : '') + '</span>').join('');
+
+  const list = sorted(sum.svcs).filter(s => !problemsOnly || (RANK[s.level] ?? 0) >= 1);
+  $('s-rows').innerHTML = list.length ? list.map(s => {
+    const link = safeUrl(s.pageUrl);
+    const name = link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener">' + esc(s.name) + '</a>' : esc(s.name);
+    const cells = s.level === 'skipped' ? Array.from({ length: HOURS }, () => '<span style="background:' + CELL.none + '"></span>').join('')
+      : hourly(s.samples).map(b => '<span title="' + esc(bucketTip(b)) + '" style="background:' + (b.worst ? CELL[b.worst] || CELL.none : CELL.none) + '"></span>').join('');
+    const now = s.level === 'skipped' ? 'needs setup' : isProbe(s) && s.latencyMs != null ? ms(s.latencyMs) : s.level === 'ok' ? 'vendor feed' : '';
+    return '<div class="g-row"><div class="g-name"><b>' + name + '</b><span>' + esc(s.group) + ' · ' + esc(kind(s)) + '</span></div>' +
+      '<div class="g-cells">' + cells + '</div>' +
+      '<div class="g-now"><b style="color:' + TEXT[s.level] + '">' + esc(LABEL[s.level] || s.level) + '</b><span>' + esc(now) + '</span></div></div>';
+  }).join('') : '<p style="color:#475467">Nothing to show. Everything is operational.</p>';
+
+  const hist = (data.history || []).slice(0, 15);
+  $('s-events').innerHTML = hist.length ? hist.map(h =>
+    '<div class="s-ev"><time title="' + esc(fmt(h.at)) + '">' + esc(fmt(h.at)) + '</time><div><b style="color:' + (TEXT[h.to] || TEXT.ok) + '">' +
+    esc(h.to === 'ok' ? 'Recovered.' : (h.kind === 'updated' ? 'Update.' : (LABEL[h.to] || h.to) + '.')) + '</b> ' + esc(h.name) + ': ' + esc(h.summary) + (h.live ? '' : ' <i>(dry run, not sent)</i>') + '</div></div>'
+  ).join('') : '<p style="color:#475467;margin:0">No alerts yet.</p>';
 }
 
-// ---------- rendering ----------
+// ---------- load + controls ----------
 async function load() {
   try {
     const r = await fetch('status.json?t=' + Date.now(), { cache: 'no-store' });
@@ -283,157 +598,52 @@ async function load() {
     data = await r.json();
     render();
   } catch (e) {
-    const b = document.getElementById('banner');
-    b.className = 'banner lvl-unknown';
-    b.textContent = 'Could not load status data (' + e.message + ')';
+    $('ops-headline').textContent = 'COULD NOT LOAD STATUS DATA';
+    $('ops-sub').textContent = e.message;
+    $('s-headline').textContent = 'Could not load status data (' + e.message + ')';
   }
 }
-
 function render() {
-  const svcs = data.services;
-  const worst = svcs.reduce((w, s) => (RANK[s.level] ?? 2) > (RANK[w] ?? 0) ? s.level : w, 'ok');
-  const bad = svcs.filter(s => (RANK[s.level] ?? 0) >= 2);
-  const banner = document.getElementById('banner');
-  banner.className = 'banner lvl-' + worst;
-  banner.innerHTML = (bad.length ? esc(bad.length + ' service' + (bad.length > 1 ? 's' : '') + ' with issues: ' + bad.map(s => s.name).join(', ')) : 'All monitored services operational') +
-    '<small>Last checked ' + esc(ago(data.generatedAt)) + ' (' + esc(fmt(data.generatedAt)) + ')' + (data.live ? '' : ' - alerts in DRY RUN mode') + '</small>';
-
-  const ageMin = (Date.now() - Date.parse(data.generatedAt)) / 60000;
-  const stale = document.getElementById('stale');
-  stale.hidden = ageMin < Math.max(30, (data.intervalMinutes || 5) * 6);
-  stale.textContent = 'This data is ' + Math.round(ageMin) + ' minutes old. The monitor may have stopped running. Check the GitHub Actions tab.';
-
-  const visible = svcs.filter(s => !problemsOnly || (RANK[s.level] ?? 0) >= 1);
-  const sorter = (a, b) => (RANK[b.level] ?? 0) - (RANK[a.level] ?? 0) || a.name.localeCompare(b.name);
-  let html;
-  if (tiles) {
-    html = visible.length ? '<div class="tiles" style="margin-top:16px">' + visible.slice().sort(sorter).map(tile).join('') + '</div>' : '';
-  } else {
-    const groups = {};
-    for (const s of visible) (groups[s.group] = groups[s.group] || []).push(s);
-    html = Object.keys(groups).map(g => '<h2>' + esc(g) + '</h2><div class="grid">' + groups[g].sort(sorter).map(card).join('') + '</div>').join('');
-  }
-  document.getElementById('groups').innerHTML = html || '<p class="empty">Nothing to show. Everything is operational.</p>';
-
-  const hist = (data.history || []).slice(0, 25);
-  document.getElementById('history').innerHTML = hist.length ? hist.map(h =>
-    '<div><time title="' + esc(fmt(h.at)) + '">' + esc(ago(h.at)) + '</time><span class="pill lvl-' + esc(h.to) + '">' +
-    esc(h.to === 'ok' ? 'Recovered' : (h.kind === 'updated' ? 'Update' : LABEL[h.to] || h.to)) + '</span> <b>' + esc(h.name) + '</b> ' + esc(h.summary) +
-    (h.live ? '' : ' <i>(dry run, not sent)</i>') + '</div>').join('') : '<div class="empty">No alerts yet.</div>';
-
-  document.getElementById('footer').textContent = 'Down Detector v' + data.version + ' - ' + svcs.length + ' checks';
+  if (!data) return;
+  const sum = summarize();
+  renderShared(sum);
+  if (view === 'serious') renderSerious(sum); else renderOps(sum);
 }
-
-function pill(level) {
-  return '<span class="pill lvl-' + esc(level) + '" data-icon="' + esc(ICON[level] || '') + '" data-tip="' + esc(TIP[level] || '') + '">' + esc(LABEL[level] || level) + '</span>';
+function countdown() {
+  if (!data) return;
+  const next = Date.parse(data.generatedAt) + (data.intervalMinutes || 5) * 60000;
+  const left = Math.round((next - Date.now()) / 1000);
+  $('ops-next').textContent = left > 0 ? 'LIVE · NEXT SWEEP ' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0') : 'LIVE · SWEEP DUE';
 }
-
-function card(s) {
-  const link = safeUrl(s.pageUrl);
-  const name = link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener">' + esc(s.name) + '</a>' : esc(s.name);
-  const inc = (s.incidents || []).filter(i => i.title && i.title !== s.summary).slice(0, 5).map(i => {
-    const u = safeUrl(i.url);
-    return '<li>' + (u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(i.title) + '</a>' : esc(i.title)) + '</li>';
-  }).join('');
-  const kind = s.type === 'http' ? 'Direct probe' : s.type === 'tcp' ? 'Port check' : 'Vendor status';
-  const viz = s.level === 'skipped' ? '' : '<div class="viz">' + barsHtml(s) + (s.type === 'http' || s.type === 'tcp' ? sparkHtml(s) : '') + '</div>';
-  return '<div class="svc"><div class="name">' + name + '</div>' + pill(s.level) +
-    '<div class="detail">' + esc(s.summary) + '</div>' + (inc ? '<ul>' + inc + '</ul>' : '') + viz +
-    '<div class="meta">' + kind + (s.level !== 'ok' && s.level !== 'skipped' && s.since ? ' - since ' + esc(fmt(s.since)) : '') + '</div></div>';
+let view = 'ops';
+function setView(v) {
+  view = v === 'serious' && !tv ? 'serious' : 'ops';
+  document.body.className = view + (tv ? ' tv' : '');
+  $('ops').hidden = view !== 'ops';
+  $('serious').hidden = view !== 'serious';
+  if (!tv) store('dd-view', view);
+  render();
 }
-
-function tile(s) {
-  const u = s.level === 'skipped' ? 'needs setup' : pctText(uptime(s.samples)) + ' (24h)';
-  const link = safeUrl(s.pageUrl);
-  const inner = '<div class="t-name">' + esc(s.name) + '</div><div><div class="t-lvl">' + esc((ICON[s.level] || '') + ' ' + (LABEL[s.level] || s.level)) + '</div><div class="t-sub">' + esc(u) + '</div></div>';
-  return '<div class="tile lvl-' + esc(s.level) + '" data-tt="' + esc(s.summary) + '">' +
-    (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;display:contents">' + inner + '</a>' : inner) + '</div>';
-}
-
-// ---------- tooltip layer ----------
-const tt = document.getElementById('tt');
-function showTip(text, x, y) {
-  tt.textContent = text;
-  tt.style.display = 'block';
-  const r = tt.getBoundingClientRect();
-  let left = x + 12, top = y + 14;
-  if (left + r.width > innerWidth - 8) left = x - r.width - 12;
-  if (top + r.height > innerHeight - 8) top = y - r.height - 10;
-  tt.style.left = Math.max(8, left) + 'px';
-  tt.style.top = Math.max(8, top) + 'px';
-}
-function hideTip() { tt.style.display = 'none'; }
-document.addEventListener('mousemove', e => {
-  const sp = e.target.closest && e.target.closest('.spark');
-  document.querySelectorAll('.spark .xh').forEach(l => { if (!sp || !sp.contains(l)) l.setAttribute('visibility', 'hidden'); });
-  if (sp) return sparkHover(sp, e);
-  const el = e.target.closest && e.target.closest('[data-tt]');
-  if (el && el.dataset.tt) showTip(el.dataset.tt, e.clientX, e.clientY); else hideTip();
-});
-document.addEventListener('mouseleave', hideTip);
-function sparkHover(sp, e) {
-  const s = data.services.find(x => x.id === sp.dataset.id);
-  const svg = sp.querySelector('svg');
-  const r = svg.getBoundingClientRect();
-  if (e.clientY > r.bottom + 2) { hideTip(); return; }
-  const { start, end } = windowOf();
-  const t = start + ((e.clientX - r.left) / r.width) * (end - start);
-  let best = null;
-  for (const p of s.samples || []) if (p[0] >= start && (!best || Math.abs(p[0] - t) < Math.abs(best[0] - t))) best = p;
-  if (!best) return hideTip();
-  const xv = ((best[0] - start) / (end - start)) * 600;
-  const xh = svg.querySelector('.xh');
-  xh.setAttribute('x1', xv); xh.setAttribute('x2', xv); xh.setAttribute('visibility', 'visible');
-  const lvl = CODE_LEVEL[best[1]];
-  showTip(hm(best[0]) + '\n' + (best[2] !== null && best[2] !== undefined ? best[2] + ' ms' : 'no response') + (lvl !== 'ok' ? ' - ' + LABEL[lvl] : ''), e.clientX, e.clientY);
-}
-
-// ---------- controls ----------
-function setAuto(on) {
-  document.getElementById('btn-auto').setAttribute('aria-pressed', String(on));
-  clearInterval(timer);
-  if (on) timer = setInterval(load, 60000);
-  store('dd-auto', on ? '1' : '0');
-}
-function applyTheme(t) {
-  if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
-  else document.documentElement.removeAttribute('data-theme');
-  document.getElementById('btn-theme').textContent = 'Theme: ' + (t || 'system');
-}
-function setTiles(on) {
-  tiles = on;
-  document.getElementById('btn-view').setAttribute('aria-pressed', String(on));
-  if (!tv) store('dd-tiles', on ? '1' : '0');
-  if (data) render();
-}
-document.getElementById('btn-refresh').onclick = load;
-document.getElementById('btn-auto').onclick = e => setAuto(e.currentTarget.getAttribute('aria-pressed') !== 'true');
-document.getElementById('btn-view').onclick = () => setTiles(!tiles);
-document.getElementById('btn-problems').onclick = e => {
+all('.js-view').forEach(b => b.onclick = () => setView(view === 'ops' ? 'serious' : 'ops'));
+all('.js-refresh').forEach(b => b.onclick = load);
+all('.js-problems').forEach(b => b.onclick = () => {
   problemsOnly = !problemsOnly;
-  e.currentTarget.setAttribute('aria-pressed', String(problemsOnly));
+  all('.js-problems').forEach(x => x.setAttribute('aria-pressed', String(problemsOnly)));
   store('dd-problems', problemsOnly ? '1' : '0');
-  if (data) render();
-};
-document.getElementById('btn-help').onclick = e => {
-  const h = document.getElementById('help');
-  h.hidden = !h.hidden;
-  e.currentTarget.setAttribute('aria-expanded', String(!h.hidden));
-};
-document.getElementById('btn-theme').onclick = () => {
-  const order = ['', 'light', 'dark'];
-  const next = order[(order.indexOf(store('dd-theme') || '') + 1) % 3];
-  store('dd-theme', next);
-  applyTheme(next);
-};
+  render();
+});
+all('.js-help').forEach(b => b.onclick = () => {
+  const open = all('.js-helpbox')[0].hidden;
+  all('.js-helpbox').forEach(h => h.hidden = !open);
+  all('.js-help').forEach(x => x.setAttribute('aria-expanded', String(open)));
+});
 
-if (tv) document.body.classList.add('tv');
 problemsOnly = store('dd-problems') === '1';
-document.getElementById('btn-problems').setAttribute('aria-pressed', String(problemsOnly));
-applyTheme(store('dd-theme') || '');
-setTiles(tv || store('dd-tiles') === '1');
-setAuto(tv || store('dd-auto') !== '0');
-load();
+all('.js-problems').forEach(x => x.setAttribute('aria-pressed', String(problemsOnly)));
+setView(params.get('view') === 'serious' ? 'serious' : tv ? 'ops' : store('dd-view') || 'ops');
+timer = setInterval(load, 60000);
+tick = setInterval(countdown, 1000);
+load().then(countdown);
 </script>
 </body>
 </html>
