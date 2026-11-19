@@ -264,3 +264,41 @@ test('teams card has no image when there is no page URL', () => {
   assert.equal(card.body[0].type, 'TextBlock');
   assert.equal(alertImage(down, {}), null);
 });
+
+// ---------- narrowing vendor feeds (v1.3.3) ----------
+test('statuspage filter ignores incidents on components we do not watch', () => {
+  const data = {
+    status: { indicator: 'minor', description: 'Minor Service Outage' },
+    components: [
+      { name: 'Actions', status: 'operational' }, { name: 'Pages', status: 'operational' },
+      { name: 'Git Operations', status: 'operational' }, { name: 'API Requests', status: 'operational' },
+      { name: 'Copilot', status: 'degraded_performance' },
+    ],
+    incidents: [{ id: 'c1', name: 'Degraded availability for a Copilot model', status: 'investigating', components: [{ name: 'Copilot' }] }],
+  };
+  const r = parseStatuspage(data, { components: ['Git Operations', 'API Requests', 'Actions', 'Pages'] });
+  assert.equal(r.level, 'ok');
+  assert.equal(r.incidents.length, 0);
+  assert.equal(r.summary, 'All watched components operational');
+  const all = parseStatuspage(data, {});
+  assert.equal(all.level, 'degraded', 'without a filter the Copilot incident still counts');
+});
+
+test('statuspage filter reports configured names that are not on the page', () => {
+  const data = { status: { indicator: 'none' }, components: [{ name: 'Actions', status: 'operational' }], incidents: [] };
+  const r = parseStatuspage(data, { components: ['Actions', 'Pagez'] });
+  assert.equal(r.level, 'ok');
+  assert.match(r.summary, /not found on status page: Pagez/);
+});
+
+test('google filter keeps only the products we use', () => {
+  const data = [
+    { id: '1', status_impact: 'SERVICE_DISRUPTION', affected_products: [{ title: 'Google Meet' }], most_recent_update: { text: 'Meet issue' } },
+    { id: '2', status_impact: 'SERVICE_OUTAGE', affected_products: [{ title: 'Gmail' }], most_recent_update: { text: 'Mail down' } },
+  ];
+  const r = parseGoogle(data, { products: ['Gmail', 'Google Drive', 'Google Docs', 'Google Sheets'] });
+  assert.equal(r.incidents.length, 1);
+  assert.equal(r.level, 'down');
+  assert.match(r.summary, /Gmail/);
+  assert.equal(parseGoogle([data[0]], { products: ['Gmail'] }).level, 'ok');
+});

@@ -91,6 +91,9 @@ export function parseStatuspage(data, svc = {}) {
   } else {
     summary = filter ? 'All watched components operational' : data.status?.description || 'All systems operational';
   }
+  // A configured name that doesn't match any component would silently hide outages: say so.
+  const missing = filter ? svc.components.filter((n) => !watched.some((c) => String(c.name).toLowerCase() === n.toLowerCase())) : [];
+  if (missing.length) summary += ` (not found on status page: ${missing.join(', ')})`;
   return { level, summary: clip(summary, 240), incidents };
 }
 

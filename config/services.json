@@ -29,7 +29,8 @@
       "name": "GitHub",
       "group": "Dev",
       "type": "statuspage",
-      "url": "https://www.githubstatus.com"
+      "url": "https://www.githubstatus.com",
+      "components": ["Git Operations", "API Requests", "Actions", "Pages"]
     },
     {
       "id": "github-api",
@@ -79,6 +80,7 @@
       "group": "Google",
       "type": "google",
       "url": "https://www.google.com/appsstatus/dashboard/incidents.json",
+      "products": ["Gmail", "Google Drive", "Google Docs", "Google Sheets"],
       "pageUrl": "https://www.google.com/appsstatus/dashboard/"
     },
     {
