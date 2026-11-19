@@ -83,6 +83,8 @@ test('run 1 (dry run): baseline. Google already degraded so it is reported, noth
   const status = JSON.parse(readFileSync(join(dir, 'site', 'status.json'), 'utf8'));
   assert.equal(status.services.find((s) => s.id === 'm365').level, 'skipped');
   assert.ok(existsSync(join(dir, 'site', 'index.html')));
+  assert.ok(existsSync(join(dir, 'site', 'scooter.webp')), 'sprites are published with the page');
+  assert.ok(existsSync(join(dir, 'site', 'desk.webp')));
 });
 
 test('run 2 (live): nothing changed, nothing sent', async () => {

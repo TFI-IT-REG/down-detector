@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Down Detector v1.2.0
+// Down Detector v1.3.0
 // Polls vendor status sources and direct probes, alerts on state changes.
 // Dry run by default. Set LIVE=true to actually send notifications.
 //
@@ -7,14 +7,14 @@
 //   --test-alert   send a TEST message to every configured channel, then exit (always sends)
 //   --probe        print raw responses from each status source (for verifying formats)
 
-import { readFile, writeFile, mkdir, copyFile, appendFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, copyFile, appendFile, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runCheck } from './checks.mjs';
 import { evaluate, LABEL } from './engine.mjs';
 import { buildRequests, channels, describeRequest, sendAll } from './notify.mjs';
 
-export const VERSION = '1.2.0';
+export const VERSION = '1.3.0';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -179,7 +179,8 @@ async function main() {
   };
   await mkdir(SITE_DIR, { recursive: true });
   await writeJson(join(SITE_DIR, 'status.json'), status);
-  await copyFile(join(here, 'site', 'index.html'), join(SITE_DIR, 'index.html'));
+  // Publish the page and everything beside it (sprites etc.).
+  for (const f of await readdir(join(here, 'site'))) await copyFile(join(here, 'site', f), join(SITE_DIR, f));
 
   // Job summary
   const rows = status.services.map((s) => `| ${s.level} | ${s.name} | ${String(s.summary).replace(/\|/g, '/')} |`).join('\n');

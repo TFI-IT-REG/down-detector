@@ -1,6 +1,6 @@
 # Down Detector
 
-v1.2.0. Watches the services we depend on and posts to Teams and phone push at the first sign of trouble.
+v1.3.0. Watches the services we depend on and posts to Teams and phone push at the first sign of trouble.
 
 It runs on GitHub Actions every 5 minutes and uses two kinds of checks:
 
@@ -9,7 +9,7 @@ It runs on GitHub Actions every 5 minutes and uses two kinds of checks:
 
 Alerts only go out when something changes: a new problem, a worse problem, a new incident on a service that's already down, or a recovery. Several changes in one run are batched into one message.
 
-The status page shows a 24-hour history bar and uptime % per service, response time charts for direct probes, and a tile view for wall screens.
+The status page has two views. **Night Ops** (the default) shows each service as a security-camera monitor with its current reading, 24 hourly bars and uptime %, plus a scrolling alert ticker and two animated guards whose mood follows the overall status. **Serious view** is a plain 24-hour grid with no cartoons. Each viewer's choice is remembered in their browser.
 
 It ships in **dry-run mode**. It checks everything and shows what it would send, but sends nothing until you set `LIVE=true`.
 
@@ -26,7 +26,8 @@ It ships in **dry-run mode**. It checks everything and shows what it would send,
 | Check a new feed's format | Actions > Down Detector > Run workflow > tick "Print raw responses" |
 | See the last run | Actions > Down Detector > latest run > Summary |
 | Status page | https://tfi-it-reg.github.io/down-detector/ |
-| Wall screen view | https://tfi-it-reg.github.io/down-detector/?view=tv |
+| Wall screen view | https://tfi-it-reg.github.io/down-detector/?view=tv (Night Ops, full width, no buttons) |
+| Serious view link | https://tfi-it-reg.github.io/down-detector/?view=serious |
 | Run tests locally | `npm test` |
 | 5-minute timer (Cloudflare Worker) | `down-detector-scheduler` in Cloudflare starts each run, because GitHub's own schedule is unreliable. See [`worker/README.md`](worker/README.md). |
 
@@ -179,7 +180,7 @@ cron (5 min) -> restore state from Actions cache
 
 - State lives in the Actions cache (`state/state.json`). If the cache gets evicted, the next run sets a new baseline. Healthy services stay silent, and anything already down alerts once.
 - If every channel fails to send, the alert isn't marked as sent and is retried on the next run. The job also fails, so GitHub emails the repo owner.
-- Files: `src/monitor.mjs` (main), `src/checks.mjs` (check types), `src/engine.mjs` (alert rules), `src/notify.mjs` (channels), `src/site/index.html` (status page).
+- Files: `src/monitor.mjs` (main), `src/checks.mjs` (check types), `src/engine.mjs` (alert rules), `src/notify.mjs` (channels), `src/site/index.html` (status page), `src/site/*.webp` (guard sprite sheets). Everything in `src/site/` is published with the page.
 - No dependencies. Node 20 or newer.
 
 ## KNOWN GAPS
