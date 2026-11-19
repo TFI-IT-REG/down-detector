@@ -1,7 +1,11 @@
-# Down Detector dispatcher v1.0.0
-# Starts the Down Detector workflow every 5 minutes. See worker/README.md.
+# Down Detector Scheduler v1.0.0
+# Mirrors the live Worker in Cloudflare. See worker/README.md.
+#
+# The live Worker is managed in the Cloudflare dashboard. If you ever deploy
+# from here instead, these settings replace the dashboard's variables and cron
+# trigger, so keep them matching what's live. The GITHUB_TOKEN secret is kept.
 
-name = "down-detector-dispatcher"
+name = "down-detector-scheduler"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
@@ -9,14 +13,8 @@ compatibility_date = "2026-10-01"
 crons = ["*/5 * * * *"]
 
 [vars]
-# Anything other than "false" means dry run: log only, never call GitHub.
-DRY_RUN = "true"
-GH_OWNER = "TFI-IT-REG"
-GH_REPO = "down-detector"
-GH_WORKFLOW = "monitor.yml"
-GH_REF = "main"
-
-# GITHUB_TOKEN is a secret. Set it with: npx wrangler secret put GITHUB_TOKEN
+# Live in production. Anything other than "false" means dry run.
+DRY_RUN = "false"
 
 [observability]
 enabled = true

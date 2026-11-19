@@ -28,7 +28,7 @@ It ships in **dry-run mode**. It checks everything and shows what it would send,
 | Status page | https://tfi-it-reg.github.io/down-detector/ |
 | Wall screen view | https://tfi-it-reg.github.io/down-detector/?view=tv |
 | Run tests locally | `npm test` |
-| 5-minute timer (Cloudflare Worker) | See [`worker/README.md`](worker/README.md). GitHub's own schedule is unreliable, so the Worker starts each run. |
+| 5-minute timer (Cloudflare Worker) | `down-detector-scheduler` in Cloudflare starts each run, because GitHub's own schedule is unreliable. See [`worker/README.md`](worker/README.md). |
 
 Levels: **Down** (high-priority push), **Degraded**, **Can't check** (status source unreadable 3 runs in a row), **Maintenance** (silent by default), **Recovered** (quiet push).
 
