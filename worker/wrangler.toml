@@ -1,0 +1,20 @@
+# Down Detector Scheduler v1.0.0
+# Mirrors the live Worker in Cloudflare. See worker/README.md.
+#
+# The live Worker is managed in the Cloudflare dashboard. If you ever deploy
+# from here instead, these settings replace the dashboard's variables and cron
+# trigger, so keep them matching what's live. The GITHUB_TOKEN secret is kept.
+
+name = "down-detector-scheduler"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+# Live in production. Anything other than "false" means dry run.
+DRY_RUN = "false"
+
+[observability]
+enabled = true
