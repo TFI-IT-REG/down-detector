@@ -31,6 +31,8 @@ jobs:
     env:
       LIVE: ${{ vars.LIVE }}
       PAGE_URL: ${{ vars.PAGE_URL }}
+      # Authenticates the GitHub API probe (anonymous calls share a 60/hour limit per runner IP)
+      GITHUB_TOKEN: ${{ github.token }}
       INTERVAL_MINUTES: '5'
       # Teams is paused unless the TEAMS_ENABLED repo variable is 'true'
       TEAMS_WEBHOOK_URL: ${{ vars.TEAMS_ENABLED == 'true' && secrets.TEAMS_WEBHOOK_URL || '' }}

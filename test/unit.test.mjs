@@ -200,3 +200,47 @@ test('tcp check: bad config is unknown', async () => {
   const r = await runCheck({ id: 't', type: 'tcp', host: 'x', port: 'abc' }, {}, {});
   assert.equal(r.level, 'unknown');
 });
+
+// ---------- http probe: rate limits (v1.3.1) ----------
+import http from 'node:http';
+
+async function server(handler) {
+  const srv = http.createServer(handler).listen(0, '127.0.0.1');
+  await new Promise((r) => srv.once('listening', r));
+  return { srv, url: `http://127.0.0.1:${srv.address().port}/` };
+}
+
+test('http check: 403 with x-ratelimit-remaining 0 is unknown, not down', async () => {
+  const { srv, url } = await server((req, res) => { res.writeHead(403, { 'x-ratelimit-remaining': '0' }); res.end('API rate limit exceeded'); });
+  const r = await runCheck({ id: 'g', type: 'http', url }, { retryDelayMs: 0 }, {});
+  srv.close();
+  assert.equal(r.level, 'unknown');
+  assert.match(r.summary, /Rate limited \(HTTP 403\)/);
+});
+
+test('http check: 429 with retry-after is unknown', async () => {
+  const { srv, url } = await server((req, res) => { res.writeHead(429, { 'retry-after': '30' }); res.end(); });
+  const r = await runCheck({ id: 'g', type: 'http', url }, { retryDelayMs: 0 }, {});
+  srv.close();
+  assert.equal(r.level, 'unknown');
+});
+
+test('http check: plain 403 is still down', async () => {
+  const { srv, url } = await server((req, res) => { res.writeHead(403); res.end(); });
+  const r = await runCheck({ id: 'g', type: 'http', url }, { retryDelayMs: 0 }, {});
+  srv.close();
+  assert.equal(r.level, 'down');
+  assert.match(r.summary, /HTTP 403.*failed twice/);
+});
+
+test('http check: secret header is sent, and a missing token skips the check', async () => {
+  let seen = '';
+  const { srv, url } = await server((req, res) => { seen = req.headers.authorization || ''; res.end('ok'); });
+  const svc = { id: 'g', type: 'http', url, headers: { authorization: 'Bearer ${GITHUB_TOKEN}' } };
+  const ok = await runCheck(svc, { retryDelayMs: 0 }, { GITHUB_TOKEN: 'tok-TESTONLY' });
+  srv.close();
+  assert.equal(ok.level, 'ok');
+  assert.equal(seen, 'Bearer tok-TESTONLY');
+  const skipped = await runCheck(svc, {}, {});
+  assert.equal(skipped.level, 'skipped');
+});
