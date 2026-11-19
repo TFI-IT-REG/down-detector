@@ -45,10 +45,28 @@ export function priorityOf(changes) {
   return { ntfy: 3, pushover: -1 };
 }
 
+/** Mall cop picture for the card: on the radio for problems, cruising for recoveries. Needs the public page URL. */
+export function alertImage(changes, ctx = {}) {
+  if (!ctx.pageUrl) return null;
+  const base = ctx.pageUrl.endsWith('/') ? ctx.pageUrl : ctx.pageUrl + '/';
+  const ok = worstTo(changes) === 'ok';
+  return ok
+    ? { url: base + 'alert-ok.png', alt: 'Security guard on patrol: all clear' }
+    : { url: base + 'alert-radio.png', alt: 'Security guard radioing in an alert' };
+}
+
 export function buildTeamsPayload(changes, ctx = {}) {
-  const body = [
-    { type: 'TextBlock', text: buildTitle(changes, ctx), weight: 'Bolder', size: 'Medium', wrap: true },
-  ];
+  const titleBlock = { type: 'TextBlock', text: buildTitle(changes, ctx), weight: 'Bolder', size: 'Medium', wrap: true };
+  const img = alertImage(changes, ctx);
+  const body = img
+    ? [{
+        type: 'ColumnSet',
+        columns: [
+          { type: 'Column', width: 'auto', items: [{ type: 'Image', url: img.url, altText: img.alt, width: '64px' }] },
+          { type: 'Column', width: 'stretch', verticalContentAlignment: 'Center', items: [titleBlock] },
+        ],
+      }]
+    : [titleBlock];
   for (const c of [...changes].sort((a, b) => (LEVEL_RANK[b.to] ?? 0) - (LEVEL_RANK[a.to] ?? 0))) {
     const items = [
       {
