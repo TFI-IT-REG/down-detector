@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Down Detector v1.3.0
+// Down Detector v1.3.1
 // Polls vendor status sources and direct probes, alerts on state changes.
 // Dry run by default. Set LIVE=true to actually send notifications.
 //
@@ -14,7 +14,7 @@ import { runCheck } from './checks.mjs';
 import { evaluate, LABEL } from './engine.mjs';
 import { buildRequests, channels, describeRequest, sendAll } from './notify.mjs';
 
-export const VERSION = '1.3.0';
+export const VERSION = '1.3.1';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');

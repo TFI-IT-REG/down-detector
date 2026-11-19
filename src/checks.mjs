@@ -202,7 +202,14 @@ async function httpAttempt(svc, timeoutMs, slowMs) {
     const text = svc.expectText ? await r.text() : (await r.arrayBuffer(), '');
     const latencyMs = Math.round(performance.now() - start);
     const okStatus = svc.expectStatus ? svc.expectStatus.includes(r.status) : r.status >= 200 && r.status < 400;
-    if (!okStatus) return { level: 'down', summary: `HTTP ${r.status}`, latencyMs };
+    if (!okStatus) {
+      // A rate limit means we couldn't check, not that the service is down. "unknown" only
+      // alerts after several runs in a row (unknownThreshold), so a shared runner IP hitting
+      // an anonymous API limit no longer pages anyone.
+      const limited = (r.status === 403 || r.status === 429) && (r.headers.get('x-ratelimit-remaining') === '0' || r.headers.has('retry-after'));
+      if (limited) return { level: 'unknown', summary: `Rate limited (HTTP ${r.status}), couldn't check`, latencyMs };
+      return { level: 'down', summary: `HTTP ${r.status}`, latencyMs };
+    }
     if (svc.expectText && !text.includes(svc.expectText)) return { level: 'down', summary: `HTTP ${r.status} but expected text "${svc.expectText}" missing`, latencyMs };
     if (latencyMs > slowMs) return { level: 'degraded', summary: `Slow: ${latencyMs} ms (limit ${slowMs} ms)`, latencyMs };
     return { level: 'ok', summary: `HTTP ${r.status} in ${latencyMs} ms`, latencyMs };

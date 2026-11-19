@@ -37,6 +37,7 @@
       "group": "Dev",
       "type": "http",
       "url": "https://api.github.com/zen",
+      "headers": { "authorization": "Bearer ${GITHUB_TOKEN}" },
       "pageUrl": "https://www.githubstatus.com"
     },
     {
