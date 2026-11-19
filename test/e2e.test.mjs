@@ -101,7 +101,10 @@ test('run 3 (live): statuspage outage + probe failure -> one batched alert per c
   assert.equal(received.length, 3);
   const teams = received.find((r) => r.path.startsWith('/hook/teams'));
   const card = JSON.parse(teams.body).attachments[0].content;
-  assert.match(card.body[0].text, /2 service changes: 2 with issues/);
+  const head = card.body[0];
+  assert.equal(head.type, 'ColumnSet', 'card leads with the guard image beside the title');
+  assert.equal(head.columns[0].items[0].url, 'https://example.github.io/dd/alert-radio.png');
+  assert.match(head.columns[1].items[0].text, /2 service changes: 2 with issues/);
   const ntfy = received.find((r) => r.path === '/hook/ntfy/secret-topic');
   assert.equal(ntfy.headers['x-priority'], '5');
   assert.match(ntfy.body, /DOWN Mock Probe: HTTP 503/);

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { parseStatuspage, parseGoogle, parseRss, parseM365 } from '../src/checks.mjs';
 import { evaluate } from '../src/engine.mjs';
-import { buildTeamsPayload, buildTitle, buildRequests, describeRequest } from '../src/notify.mjs';
+import { buildTeamsPayload, buildTitle, buildRequests, describeRequest, alertImage } from '../src/notify.mjs';
 
 const fx = (n) => readFileSync(new URL(`./fixtures/${n}`, import.meta.url), 'utf8');
 const NOW = Date.parse('2026-11-17T12:00:00Z');
@@ -243,4 +243,24 @@ test('http check: secret header is sent, and a missing token skips the check', a
   assert.equal(seen, 'Bearer tok-TESTONLY');
   const skipped = await runCheck(svc, {}, {});
   assert.equal(skipped.level, 'skipped');
+});
+
+// ---------- Teams card image (v1.3.2) ----------
+test('teams card shows the radio guard for problems and the cruising guard for recoveries', () => {
+  const down = [{ id: 'a', name: 'NetSuite login', to: 'down', from: 'ok', kind: 'changed', summary: 'HTTP 503', incidents: [] }];
+  const up = [{ id: 'a', name: 'NetSuite login', to: 'ok', from: 'down', kind: 'changed', summary: 'HTTP 200', incidents: [] }];
+  const ctx = { pageUrl: 'https://example.github.io/dd/' };
+  const cardOf = (c) => buildTeamsPayload(c, ctx).attachments[0].content;
+  const img = (card) => card.body[0].columns[0].items[0];
+  assert.equal(img(cardOf(down)).url, 'https://example.github.io/dd/alert-radio.png');
+  assert.equal(img(cardOf(up)).url, 'https://example.github.io/dd/alert-ok.png');
+  assert.equal(alertImage(down, { pageUrl: 'https://example.github.io/dd' }).url, 'https://example.github.io/dd/alert-radio.png');
+  assert.equal(cardOf(down).body[0].columns[1].items[0].weight, 'Bolder');
+});
+
+test('teams card has no image when there is no page URL', () => {
+  const down = [{ id: 'a', name: 'X', to: 'down', from: 'ok', kind: 'changed', summary: 's', incidents: [] }];
+  const card = buildTeamsPayload(down, {}).attachments[0].content;
+  assert.equal(card.body[0].type, 'TextBlock');
+  assert.equal(alertImage(down, {}), null);
 });
